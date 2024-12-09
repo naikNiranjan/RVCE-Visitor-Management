@@ -1,11 +1,6 @@
 import type { PropsWithChildren, ReactElement } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, {
-  interpolate,
-  useAnimatedRef,
-  useAnimatedStyle,
-  useScrollViewOffset,
-} from 'react-native-reanimated';
+import { SpringScrollView } from 'react-native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
@@ -24,29 +19,19 @@ export default function ParallaxScrollView({
   headerBackgroundColor,
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
-  const scrollRef = useAnimatedRef<Animated.ScrollView>();
-  const scrollOffset = useScrollViewOffset(scrollRef);
   const bottom = useBottomTabOverflow();
-
   const headerAnimatedStyle = useAnimatedStyle(() => {
-    // Clamp scroll offset to prevent large values
-    const clampedScrollOffset = Math.min(Math.max(scrollOffset.value, -HEADER_HEIGHT), HEADER_HEIGHT);
-
     return {
       transform: [
         {
           translateY: interpolate(
-            clampedScrollOffset,
+            scrollOffset.value,
             [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
             [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
           ),
         },
         {
-          scale: interpolate(
-            clampedScrollOffset,
-            [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [2, 1, 1]
-          ),
+          scale: interpolate(scrollOffset.value, [-HEADER_HEIGHT, 0, HEADER_HEIGHT], [2, 1, 1]),
         },
       ],
     };
@@ -54,21 +39,16 @@ export default function ParallaxScrollView({
 
   return (
     <ThemedView style={styles.container}>
-      <Animated.ScrollView
-        ref={scrollRef}
-        scrollEventThrottle={16}
-        scrollIndicatorInsets={{ bottom }}
-        contentContainerStyle={{ paddingBottom: bottom }}>
-        <Animated.View
-          style={[
-            styles.header,
-            { backgroundColor: headerBackgroundColor[colorScheme] },
-            headerAnimatedStyle,
-          ]}>
+      <SpringScrollView>
+        <ThemedView style={[
+          styles.header,
+          { backgroundColor: headerBackgroundColor[colorScheme] },
+          headerAnimatedStyle,
+        ]}>
           {headerImage}
-        </Animated.View>
+        </ThemedView>
         <ThemedView style={styles.content}>{children}</ThemedView>
-      </Animated.ScrollView>
+      </SpringScrollView>
     </ThemedView>
   );
 }
