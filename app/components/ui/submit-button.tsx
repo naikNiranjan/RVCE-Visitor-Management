@@ -7,18 +7,20 @@ interface SubmitButtonProps {
   label: string;
 }
 
-export function SubmitButton({ onPress, label }: SubmitButtonProps) {
+export const SubmitButton: React.FC<SubmitButtonProps> = ({ onPress, label }) => {
   return (
     <TouchableOpacity 
       style={styles.button}
       onPress={onPress}
       activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`Submit button: ${label}`}
     >
       <Text style={styles.buttonText}>{label}</Text>
       <MaterialIcons name="check" size={24} color="#fff" />
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   button: {
@@ -31,10 +33,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#6B46C1',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
@@ -45,4 +44,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 8,
   },
-}); 
+});

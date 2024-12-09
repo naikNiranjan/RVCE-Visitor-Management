@@ -8,12 +8,14 @@ interface CheckboxProps {
   label: string;
 }
 
-export function Checkbox({ value, onValueChange, label }: CheckboxProps) {
+export const Checkbox: React.FC<CheckboxProps> = ({ value, onValueChange, label }) => {
   return (
     <TouchableOpacity 
       style={styles.container} 
-      onPress={() => onValueChange(!value)}
+      onPress={() => onValueChange(!value)} 
       activeOpacity={0.7}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: value }}
     >
       <View style={[styles.checkbox, value && styles.checked]}>
         {value && <MaterialIcons name="check" size={16} color="#fff" />}
@@ -21,7 +23,7 @@ export function Checkbox({ value, onValueChange, label }: CheckboxProps) {
       <Text style={styles.label}>{label}</Text>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -49,4 +51,4 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     flex: 1,
   },
-}); 
+});

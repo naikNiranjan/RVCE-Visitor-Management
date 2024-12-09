@@ -30,30 +30,30 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 function VisitorEntry() {
-    return (
-        <Stack.Navigator 
-            initialRouteName="VisitorRegistration"
-            screenOptions={{
-                headerShown: false,
-                cardStyle: { backgroundColor: '#fff' },
-                presentation: 'card',
-                gestureEnabled: true,
-            }}
-        >
-            <Stack.Screen 
-                name="VisitorRegistration" 
-                component={VisitorRegistration}
-            />
-            <Stack.Screen 
-                name="VisitorAdditionalDetails" 
-                component={VisitorAdditionalDetails}
-            />
-            <Stack.Screen 
-                name="VisitorSuccess" 
-                component={VisitorSuccess}
-            />
-        </Stack.Navigator>
-    );
+  return (
+    <Stack.Navigator 
+      initialRouteName="VisitorRegistration"
+      screenOptions={{
+        headerShown: false,
+        cardStyle: { backgroundColor: '#fff' },
+        presentation: 'card',
+        gestureEnabled: true,
+      }}
+    >
+      <Stack.Screen 
+        name="VisitorRegistration" 
+        component={VisitorRegistration}
+      />
+      <Stack.Screen 
+        name="VisitorAdditionalDetails" 
+        component={VisitorAdditionalDetails}
+      />
+      <Stack.Screen 
+        name="VisitorSuccess" 
+        component={VisitorSuccess}
+      />
+    </Stack.Navigator>
+  );
 }
 
 export default VisitorEntry;

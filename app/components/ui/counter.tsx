@@ -12,24 +12,20 @@ interface CounterProps {
   maxValue?: number;
 }
 
-export function Counter({
+export const Counter: React.FC<CounterProps> = ({
   count,
   onIncrement,
   onDecrement,
   label,
   minValue = 1,
   maxValue = 10,
-}: CounterProps) {
+}) => {
   const handleDecrement = () => {
-    if (count > minValue) {
-      onDecrement();
-    }
+    if (count > minValue) onDecrement();
   };
 
   const handleIncrement = () => {
-    if (count < maxValue) {
-      onIncrement();
-    }
+    if (count < maxValue) onIncrement();
   };
 
   return (
@@ -37,9 +33,11 @@ export function Counter({
       <Text style={styles.label}>{label}</Text>
       <View style={styles.counterContainer}>
         <TouchableOpacity 
-          onPress={handleDecrement}
-          style={[styles.button, count <= minValue && styles.buttonDisabled]}
+          onPress={handleDecrement} 
+          style={[styles.button, count <= minValue && styles.buttonDisabled]} 
           disabled={count <= minValue}
+          accessibilityRole="button"
+          accessibilityLabel="Decrease count"
         >
           <Ionicons name="remove" size={24} color={count <= minValue ? '#999' : Colors.PRIMARY} />
         </TouchableOpacity>
@@ -49,16 +47,18 @@ export function Counter({
         </View>
 
         <TouchableOpacity 
-          onPress={handleIncrement}
-          style={[styles.button, count >= maxValue && styles.buttonDisabled]}
+          onPress={handleIncrement} 
+          style={[styles.button, count >= maxValue && styles.buttonDisabled]} 
           disabled={count >= maxValue}
+          accessibilityRole="button"
+          accessibilityLabel="Increase count"
         >
           <Ionicons name="add" size={24} color={count >= maxValue ? '#999' : Colors.PRIMARY} />
         </TouchableOpacity>
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -96,4 +96,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.PRIMARY,
   },
-}); 
+});

@@ -33,7 +33,8 @@ export function VisitorRegistration() {
   });
 
   const handleNext = () => {
-    if (!formData.name || !formData.contactNumber || !formData.purposeOfVisit) {
+    const { name, contactNumber, purposeOfVisit } = formData;
+    if (!name || !contactNumber || !purposeOfVisit) {
       alert('Please fill in all required fields');
       return;
     }
@@ -122,7 +123,7 @@ export function VisitorRegistration() {
           />
         </View>
       </ScrollView>
-      
+
       <TouchableOpacity 
         style={styles.nextButton}
         onPress={handleNext}
@@ -220,4 +221,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 8,
   },
-}); 
+});

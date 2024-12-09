@@ -3,21 +3,21 @@ import { StyleSheet, Platform, Dimensions, Image, View, Text } from "react-nativ
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import index from './screens/index';
-import VisitorEntry from "./screens/VisitorEntry";
-import VisitorLog from "./screens/VisitorLog";
-import plus from "./screens/plus";
-import { Colors } from "@/constants/Colors";
+import index from './screens/index'; // Assuming index is the home screen
+import VisitorEntry from "./screens/VisitorEntry"; // Screen for visitor entry
+import VisitorLog from "./screens/VisitorLog"; // Screen for viewing visitor log
+import plus from "./screens/plus"; // Additional screen (possibly for settings or more actions)
+import { Colors } from "@/constants/Colors"; // Colors for styling
 import { useNavigation } from '@react-navigation/native';
 import { TouchableOpacity } from 'react-native';
 
-const Tab = createBottomTabNavigator();
-const { width } = Dimensions.get('window');
+const Tab = createBottomTabNavigator(); // Create bottom tab navigator
+const { width } = Dimensions.get('window'); // Get window width for responsiveness
 
 export default function Tabs() {
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
-  
+  const insets = useSafeAreaInsets(); // Get insets for safe area on devices with notches
+  const navigation = useNavigation(); // To control navigation
+
   return (
     <Tab.Navigator 
       screenOptions={{
@@ -32,7 +32,7 @@ export default function Tabs() {
         },
         headerLeft: () => (
           <TouchableOpacity 
-            onPress={() => navigation.toggleDrawer()}
+            onPress={() => navigation.toggleDrawer()} // Open side drawer on menu icon press
             style={{ marginLeft: 16 }}
           >
             <Ionicons name="menu" size={24} color={Colors.PRIMARY} />
@@ -45,7 +45,7 @@ export default function Tabs() {
         ),
         headerRight: () => (
           <Image 
-            source={require('@/assets/images/icon.png')}
+            source={require('@/assets/images/icon.png')} // App logo for header right
             style={styles.headerLogo}
           />
         ),
@@ -53,10 +53,7 @@ export default function Tabs() {
           backgroundColor: '#fff',
           elevation: 5,
           shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
+          shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.25,
           shadowRadius: 3.84,
         },
@@ -116,10 +113,7 @@ export default function Tabs() {
 const styles = StyleSheet.create({
   tabBarShadow: {
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -4,
-    },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,

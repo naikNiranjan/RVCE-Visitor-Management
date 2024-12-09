@@ -7,13 +7,15 @@ interface HeaderProps {
   onBack?: () => void;
 }
 
-export function Header({ title, onBack }: HeaderProps) {
+export const Header: React.FC<HeaderProps> = ({ title, onBack }) => {
   return (
     <View style={styles.header}>
       {onBack && (
         <TouchableOpacity 
           onPress={onBack}
           style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
           <MaterialIcons name="arrow-back" size={24} color="#1a1a1a" />
         </TouchableOpacity>
@@ -21,7 +23,7 @@ export function Header({ title, onBack }: HeaderProps) {
       <Text style={styles.headerTitle}>{title}</Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   header: {
@@ -39,4 +41,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1a1a1a',
   },
-}); 
+});

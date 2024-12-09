@@ -10,7 +10,12 @@ interface ButtonProps {
 
 export function Button({ onPress, children, style, textStyle }: ButtonProps) {
   return (
-    <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
+    <TouchableOpacity 
+      style={[styles.button, style]} 
+      onPress={onPress} 
+      activeOpacity={0.8} 
+      accessibilityRole="button"
+    >
       <Text style={[styles.text, textStyle]}>{children}</Text>
     </TouchableOpacity>
   );
@@ -29,4 +34,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-}); 
+});

@@ -16,13 +16,13 @@ interface DropdownProps {
   icon?: keyof typeof MaterialIcons.glyphMap;
 }
 
-export function Dropdown({ 
+export const Dropdown: React.FC<DropdownProps> = ({ 
   value, 
   onValueChange, 
   options, 
   placeholder = 'Select an option',
-  icon
-}: DropdownProps) {
+  icon 
+}) => {
   return (
     <View style={styles.container}>
       <View style={styles.labelContainer}>
@@ -42,6 +42,7 @@ export function Dropdown({
           onValueChange={onValueChange}
           style={styles.picker}
           dropdownIconColor="#6B46C1"
+          accessibilityLabel={`Dropdown for ${placeholder}`}
         >
           <Picker.Item 
             label={`Select ${placeholder}`} 
@@ -60,7 +61,7 @@ export function Dropdown({
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -80,18 +81,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   pickerContainer: {
+    ...StyleSheet.absoluteFillObject,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 12,
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 2,
   },
   picker: {
     height: 50,
@@ -103,4 +97,4 @@ const styles = StyleSheet.create({
   item: {
     color: '#1a1a1a',
   },
-}); 
+});

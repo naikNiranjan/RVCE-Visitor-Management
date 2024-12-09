@@ -15,13 +15,16 @@ export function HelloWave() {
 
   useEffect(() => {
     rotationAnimation.value = withRepeat(
-      withSequence(withTiming(25, { duration: 150 }), withTiming(0, { duration: 150 })),
+      withSequence(
+        withTiming(10, { duration: 150 }), // Reduced from 25 to 10 to prevent large values
+        withTiming(0, { duration: 150 })
+      ),
       4 // Run the animation 4 times
     );
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotationAnimation.value}deg` }],
+    transform: [{ rotate: `${Math.min(rotationAnimation.value, 360)}deg` }], // Clamp rotation to 360 degrees
   }));
 
   return (

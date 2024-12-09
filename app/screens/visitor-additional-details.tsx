@@ -29,7 +29,8 @@ export function VisitorAdditionalDetails() {
   });
 
   const handleSubmit = () => {
-    if (!formData.whomToMeet || !formData.department || !formData.documentType) {
+    const { whomToMeet, department, documentType } = formData;
+    if (!whomToMeet || !department || !documentType) {
       alert('Please fill in all required fields');
       return;
     }
@@ -50,7 +51,7 @@ export function VisitorAdditionalDetails() {
         <PhotoUploadSection 
           type="visitor" 
           uri={formData.visitorPhotoUri}
-          onPhotoSelected={(uri: string) => setFormData(prev => ({ 
+          onPhotoSelected={(uri: string) => setFormData(prev => ({
             ...prev, 
             visitorPhotoUri: uri 
           }))}
@@ -78,8 +79,8 @@ export function VisitorAdditionalDetails() {
             <PhotoUploadSection 
               type="document" 
               uri={formData.documentUri}
-              onPhotoSelected={(uri) => setFormData(prev => ({ 
-                ...prev, 
+              onPhotoSelected={(uri) => setFormData(prev => ({
+                ...prev,
                 documentUri: uri 
               }))}
             />
@@ -104,10 +105,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   footer: {
-    padding: 16,
-    paddingBottom: 24,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
-}); 
+});

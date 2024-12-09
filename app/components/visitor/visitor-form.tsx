@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, Text } from 'react-native';
 import { Dropdown } from '../ui/dropdown';
 import { Checkbox } from '../ui/checkbox';
-import { departments, documentTypes, staff } from '../../constants/visitor-data';
+import { departments, documentTypes, staff } from '../constants/visitor-data';
 import { AdditionalDetailsFormData } from '../../types/visitor';
 
 interface Props {

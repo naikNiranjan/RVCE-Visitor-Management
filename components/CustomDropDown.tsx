@@ -32,23 +32,3 @@ export function CustomDropDown({ label, value, onValueChange, items }: CustomDro
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    backgroundColor: '#fff',
-  },
-  picker: {
-    height: 50,
-  },
-}); 

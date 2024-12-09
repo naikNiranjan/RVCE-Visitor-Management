@@ -17,17 +17,10 @@ export interface AdditionalDetailsFormData {
   visitorCount: number;
 }
 
-export interface DropdownOption {
-  label: string;
-  value: string;
+export interface SuccessFormData {
+  name: string;
+  contactNumber: string;
+  purposeOfVisit: string;
+  whomToMeet: string;
+  department: string;
 }
-
-export type RootStackParamList = {
-  VisitorRegistration: undefined;
-  VisitorAdditionalDetails: {
-    formData: VisitorFormData;
-  };
-  VisitorSuccess: {
-    formData: VisitorFormData & AdditionalDetailsFormData;
-  };
-}; 

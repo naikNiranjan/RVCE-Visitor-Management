@@ -1,88 +1,66 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from './VisitorEntry';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView, View, Text, StyleSheet } from 'react-native';
+import { RootStackParamList } from '../types/visitor';
+import { useRoute, RouteProp } from '@react-navigation/native';
 
-interface Props {
-  route: RouteProp<RootStackParamList, 'VisitorSuccess'>;
-}
+type ScreenRouteProp = RouteProp<RootStackParamList, 'VisitorSuccess'>;
 
-export function VisitorSuccess({ route }: Props) {
+export function VisitorSuccess() {
+  const route = useRoute<ScreenRouteProp>();
   const { formData } = route.params;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.successIcon}>
-          <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
-        </View>
-        
-        <Text style={styles.title}>Registration Successful!</Text>
-        
-        <View style={styles.detailsContainer}>
-          <DetailRow label="Name" value={formData.name} />
-          <DetailRow label="Contact" value={formData.contact} />
-          <DetailRow label="Purpose" value={formData.purpose} />
-          <DetailRow label="Department" value={formData.department} />
-          <DetailRow label="Meeting" value={formData.meeting} />
-        </View>
+      <View style={styles.successMessage}>
+        <Text style={styles.header}>Thank you for registering!</Text>
+        <Text style={styles.body}>Visitor details have been successfully recorded. Please proceed with your visit.</Text>
+      </View>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.detailsTitle}>Visitor Details:</Text>
+        <Text style={styles.details}>Name: {formData.name}</Text>
+        <Text style={styles.details}>Contact: {formData.contactNumber}</Text>
+        <Text style={styles.details}>Purpose: {formData.purposeOfVisit}</Text>
+        <Text style={styles.details}>Whom to Meet: {formData.whomToMeet}</Text>
+        <Text style={styles.details}>Department: {formData.department}</Text>
       </View>
     </SafeAreaView>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.label}>{label}:</Text>
-      <Text style={styles.value}>{value}</Text>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
     padding: 20,
-    alignItems: 'center',
   },
-  successIcon: {
-    marginTop: 40,
-    marginBottom: 20,
+  successMessage: {
+    marginBottom: 40,
   },
-  title: {
-    fontSize: 24,
+  header: {
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 30,
-    color: '#333',
+    color: '#4CAF50',
+    textAlign: 'center',
+  },
+  body: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
   },
   detailsContainer: {
-    width: '100%',
-    backgroundColor: '#F5F5F5',
     padding: 20,
-    borderRadius: 10,
-    marginTop: 20,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
   },
-  detailRow: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+  detailsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
-  label: {
-    flex: 1,
-    fontWeight: '600',
-    color: '#666',
+  details: {
     fontSize: 16,
+    marginBottom: 6,
   },
-  value: {
-    flex: 2,
-    color: '#333',
-    fontSize: 16,
-  },
-}); 
+});

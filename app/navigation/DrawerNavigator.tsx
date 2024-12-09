@@ -10,7 +10,27 @@ import SignOut from '../screens/signout';
 import EmergencyContact from '../screens/EmergencyContact';
 import { Colors } from '@/constants/Colors';
 
-const Drawer = createDrawerNavigator();
+type DrawerParamList = {
+  HomeDrawer: undefined;
+  Profile: undefined;
+  EmergencyContact: undefined;
+  AboutUs: undefined;
+  Settings: undefined;
+  SignOut: undefined;
+};
+
+const Drawer = createDrawerNavigator<DrawerParamList>();
+
+interface IconContainerProps {
+  children: React.ReactNode;
+  isActive: boolean;
+}
+
+const IconContainer: React.FC<IconContainerProps> = ({ children, isActive }) => (
+  <View style={[styles.iconContainer, { backgroundColor: isActive ? Colors.PRIMARY : '#F3F0FF' }]}>
+    {children}
+  </View>
+);
 
 export default function DrawerNavigator() {
   return (
@@ -41,22 +61,23 @@ export default function DrawerNavigator() {
         options={{
           drawerLabel: 'Home',
           drawerIcon: ({ color }) => (
-            <View style={[styles.iconContainer, { backgroundColor: color === '#fff' ? Colors.PRIMARY : '#F3F0FF' }]}>
+            <IconContainer isActive={color === '#fff'}>
               <Ionicons name="home-outline" size={22} color={color === '#fff' ? '#fff' : Colors.PRIMARY} />
-            </View>
+            </IconContainer>
           ),
+          accessibilityLabel: 'Navigate to Home',
         }}
       />
       <Drawer.Screen
         name="Profile"
         component={Profile}
         options={{
-          headerShown: false,
           drawerIcon: ({ color }) => (
-            <View style={[styles.iconContainer, { backgroundColor: color === '#fff' ? Colors.PRIMARY : '#F3F0FF' }]}>
+            <IconContainer isActive={color === '#fff'}>
               <Ionicons name="person-outline" size={22} color={color === '#fff' ? '#fff' : Colors.PRIMARY} />
-            </View>
+            </IconContainer>
           ),
+          accessibilityLabel: 'Navigate to Profile',
         }}
       />
       <Drawer.Screen
@@ -65,10 +86,11 @@ export default function DrawerNavigator() {
         options={{
           drawerLabel: 'Emergency Contact',
           drawerIcon: ({ color }) => (
-            <View style={[styles.iconContainer, { backgroundColor: color === '#fff' ? Colors.PRIMARY : '#F3F0FF' }]}>
+            <IconContainer isActive={color === '#fff'}>
               <Ionicons name="call-outline" size={22} color={color === '#fff' ? '#fff' : Colors.PRIMARY} />
-            </View>
+            </IconContainer>
           ),
+          accessibilityLabel: 'Navigate to Emergency Contact',
         }}
       />
       <Drawer.Screen
@@ -77,10 +99,11 @@ export default function DrawerNavigator() {
         options={{
           drawerLabel: 'About Us',
           drawerIcon: ({ color }) => (
-            <View style={[styles.iconContainer, { backgroundColor: color === '#fff' ? Colors.PRIMARY : '#F3F0FF' }]}>
+            <IconContainer isActive={color === '#fff'}>
               <Ionicons name="information-circle-outline" size={22} color={color === '#fff' ? '#fff' : Colors.PRIMARY} />
-            </View>
+            </IconContainer>
           ),
+          accessibilityLabel: 'Navigate to About Us',
         }}
       />
       <Drawer.Screen
@@ -88,10 +111,11 @@ export default function DrawerNavigator() {
         component={Settings}
         options={{
           drawerIcon: ({ color }) => (
-            <View style={[styles.iconContainer, { backgroundColor: color === '#fff' ? Colors.PRIMARY : '#F3F0FF' }]}>
+            <IconContainer isActive={color === '#fff'}>
               <Ionicons name="settings-outline" size={22} color={color === '#fff' ? '#fff' : Colors.PRIMARY} />
-            </View>
+            </IconContainer>
           ),
+          accessibilityLabel: 'Navigate to Settings',
         }}
       />
       <Drawer.Screen
@@ -100,10 +124,11 @@ export default function DrawerNavigator() {
         options={{
           drawerLabel: 'Sign Out',
           drawerIcon: ({ color }) => (
-            <View style={[styles.iconContainer, { backgroundColor: color === '#fff' ? Colors.PRIMARY : '#F3F0FF' }]}>
+            <IconContainer isActive={color === '#fff'}>
               <Ionicons name="log-out-outline" size={22} color={color === '#fff' ? '#fff' : Colors.PRIMARY} />
-            </View>
+            </IconContainer>
           ),
+          accessibilityLabel: 'Sign out of the app',
         }}
       />
     </Drawer.Navigator>
@@ -119,4 +144,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 8,
   },
-}); 
+});

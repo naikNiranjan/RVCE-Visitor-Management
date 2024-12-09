@@ -4,14 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Carousel from 'react-native-reanimated-carousel';
 import { Colors } from '@/constants/Colors';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types/navigation';
+import { useNavigation } from '@react-navigation/native'; // Removed the import for types
+// Removed the import for RootStackParamList
 
 const HomeScreen = () => {
   const width = Dimensions.get('window').width;
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  
+  const navigation = useNavigation(); // Using the basic useNavigation hook from React Navigation
+
   const images = [
     require('@/assets/images/rvce-gate.jpg'),
     require('@/assets/images/rvce-campus.jpg'),
@@ -53,7 +52,7 @@ const HomeScreen = () => {
             style={[styles.card, styles.cardHalf]}
             onPress={() => navigation.navigate('QuickCheckIn')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]} >
               <Ionicons name="flash" size={24} color={Colors.PRIMARY} />
             </View>
             <View style={styles.cardContent}>
@@ -66,7 +65,7 @@ const HomeScreen = () => {
             style={[styles.card, styles.cardHalf]}
             onPress={() => navigation.navigate('CabEntry')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]} >
               <Ionicons name="car-outline" size={24} color={Colors.PRIMARY} />
             </View>
             <View style={styles.cardContent}>
@@ -82,14 +81,14 @@ const HomeScreen = () => {
             style={[styles.card, styles.cardHalf]}
             onPress={() => navigation.navigate('ApprovalStatus')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]} >
               <Ionicons name="time-outline" size={24} color={Colors.PRIMARY} />
             </View>
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>Approval Status</Text>
               <Text style={styles.cardDescription}>View pending requests</Text>
             </View>
-            <View style={[styles.badge, { backgroundColor: Colors.PRIMARY }]}>
+            <View style={[styles.badge, { backgroundColor: Colors.PRIMARY }]} >
               <Text style={styles.badgeText}>5</Text>
             </View>
           </TouchableOpacity>
@@ -98,7 +97,7 @@ const HomeScreen = () => {
             style={[styles.card, styles.cardHalf]}
             onPress={() => navigation.navigate('TodaysVisitors')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]} >
               <Ionicons name="people-outline" size={24} color={Colors.PRIMARY} />
             </View>
             <View style={styles.cardContent}>
@@ -114,7 +113,7 @@ const HomeScreen = () => {
             style={[styles.card, styles.cardHalf]}
             onPress={() => navigation.navigate('Gallery')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]} >
               <Ionicons name="images-outline" size={24} color={Colors.PRIMARY} />
             </View>
             <View style={styles.cardContent}>
@@ -127,7 +126,7 @@ const HomeScreen = () => {
             style={[styles.card, styles.cardHalf]}
             onPress={() => navigation.navigate('VisitorRegistration')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: '#F3F0FF' }]} >
               <Ionicons name="person-add-outline" size={24} color={Colors.PRIMARY} />
             </View>
             <View style={styles.cardContent}>
