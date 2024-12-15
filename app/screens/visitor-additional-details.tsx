@@ -12,6 +12,7 @@ import { Counter } from '../components/ui/counter';
 import { db, storage } from '../../FirebaseConfig';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { validateField, formatters } from '../utils/validation';
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'VisitorAdditionalDetails'>;
 type ScreenNavigationProp = StackNavigationProp<RootStackParamList, 'VisitorAdditionalDetails'>;

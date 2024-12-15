@@ -93,6 +93,11 @@ const AppNavigator = () => {
         options={{ title: 'Visitor Details' }}
       />
     </Stack.Navigator>
+          <Stack.Screen 
+          name="Register" 
+          component={VisitorEntry} 
+          options={{ title: 'Register' }}
+        />
   );
 };
 

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../../FirebaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
+import { validateField, validateForm, formatters } from '../utils/validation';
+import { InputHint } from '../components/ui/input-hint';
 
 type RootStackParamList = {
   VisitorRegistration: undefined;
@@ -24,6 +26,14 @@ type RootStackParamList = {
 
 type VisitorRegistrationNavigationProp = StackNavigationProp<RootStackParamList>;
 
+interface FormErrors {
+  name?: string;
+  address?: string;
+  contactNumber?: string;
+  vehicleNumber?: string;
+  purposeOfVisit?: string;
+}
+
 export function VisitorRegistration() {
   const navigation = useNavigation<VisitorRegistrationNavigationProp>();
   const [formData, setFormData] = useState({
@@ -34,15 +44,30 @@ export function VisitorRegistration() {
     purposeOfVisit: '',
     typeOfVisit: 'Personal',
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateAndUpdateField = (field: keyof FormErrors, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    const error = validateField(field, value);
+    setErrors(prev => ({
+      ...prev,
+      [field]: error,
+    }));
+  };
 
   const handleNext = async () => {
-    if (!formData.name || !formData.contactNumber || !formData.purposeOfVisit) {
-      alert('Please fill in all required fields');
+    const formErrors = validateForm(formData);
+    setErrors(formErrors);
+
+    if (Object.keys(formErrors).length > 0) {
+      alert('Please correct the errors before proceeding');
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      // Create a temporary document in Firestore
       const visitorRef = await addDoc(collection(db, 'visitors'), {
         ...formData,
         status: 'pending',
@@ -52,7 +77,6 @@ export function VisitorRegistration() {
         additionalDetails: null,
       });
 
-      // Navigate to next screen with the document ID
       navigation.navigate('VisitorAdditionalDetails', { 
         formData,
         visitorId: visitorRef.id 
@@ -60,6 +84,8 @@ export function VisitorRegistration() {
     } catch (error) {
       console.error('Error saving visitor data:', error);
       alert('Error saving visitor data. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -82,10 +108,19 @@ export function VisitorRegistration() {
           </View>
           <TextInput
             value={formData.name}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+            onChangeText={(text) => validateAndUpdateField('name', text)}
+            onBlur={() => validateField('name', formData.name)}
             placeholder="Enter visitor name"
-            style={styles.input}
+            style={[
+              styles.input,
+              errors.name ? styles.inputError : null
+            ]}
+            accessibilityLabel="Name of Visitor"
           />
+          <InputHint hint="Enter full name using only letters and spaces (2-50 characters)" />
+          {errors.name && (
+            <Text style={styles.errorText}>{errors.name}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -108,11 +143,23 @@ export function VisitorRegistration() {
           </View>
           <TextInput
             value={formData.contactNumber}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, contactNumber: text }))}
+            onChangeText={(text) => {
+              const formatted = formatters.contactNumber(text);
+              validateAndUpdateField('contactNumber', formatted);
+            }}
+            onBlur={() => validateField('contactNumber', formData.contactNumber)}
             placeholder="Enter contact number"
             keyboardType="phone-pad"
-            style={styles.input}
+            style={[
+              styles.input,
+              errors.contactNumber ? styles.inputError : null
+            ]}
+            maxLength={10}
           />
+          <InputHint hint="Enter a valid 10-digit mobile number" />
+          {errors.contactNumber && (
+            <Text style={styles.errorText}>{errors.contactNumber}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -122,10 +169,23 @@ export function VisitorRegistration() {
           </View>
           <TextInput
             value={formData.vehicleNumber}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, vehicleNumber: text }))}
-            placeholder="Enter vehicle number"
-            style={styles.input}
+            onChangeText={(text) => {
+              const formatted = formatters.vehicleNumber(text);
+              validateAndUpdateField('vehicleNumber', formatted);
+            }}
+            onBlur={() => validateField('vehicleNumber', formData.vehicleNumber)}
+            placeholder="Enter vehicle number (e.g., KA01AB1234)"
+            style={[
+              styles.input,
+              errors.vehicleNumber ? styles.inputError : null
+            ]}
+            autoCapitalize="characters"
+            maxLength={12}
           />
+          <InputHint hint="Format: KA01AB1234 (State Code)(District)(Letters)(Numbers)" />
+          {errors.vehicleNumber && (
+            <Text style={styles.errorText}>{errors.vehicleNumber}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -142,16 +202,24 @@ export function VisitorRegistration() {
             numberOfLines={3}
             textAlignVertical="top"
           />
+          <InputHint hint="Minimum 10 characters describing the purpose of visit" />
         </View>
       </ScrollView>
       
       <TouchableOpacity 
-        style={styles.nextButton}
+        style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
         onPress={handleNext}
         activeOpacity={0.8}
+        disabled={isSubmitting}
       >
-        <Text style={styles.nextButtonText}>Next</Text>
-        <MaterialIcons name="arrow-forward" size={24} color="#fff" />
+        {isSubmitting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <>
+            <Text style={styles.nextButtonText}>Next</Text>
+            <MaterialIcons name="arrow-forward" size={24} color="#fff" />
+          </>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -241,5 +309,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginRight: 8,
+  },
+  inputError: {
+    borderColor: '#dc2626',
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 8,
+  },
+  nextButtonDisabled: {
+    opacity: 0.7,
   },
 }); 

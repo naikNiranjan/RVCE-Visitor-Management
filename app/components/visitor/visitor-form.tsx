@@ -4,15 +4,24 @@ import { Dropdown } from '../ui/dropdown';
 import { Checkbox } from '../ui/checkbox';
 import { departments, documentTypes, staff } from '../../constants/visitor-data';
 import { AdditionalDetailsFormData } from '../../types/visitor';
+import { InputHint } from '../ui/input-hint';
+import { validateField } from '../../utils/validation';
 
 interface Props {
   formData: AdditionalDetailsFormData;
   setFormData: React.Dispatch<React.SetStateAction<AdditionalDetailsFormData>>;
   renderBefore?: () => ReactNode;
   renderAfter?: () => ReactNode;
+  errors?: Record<string, string>;
 }
 
-export function VisitorForm({ formData, setFormData, renderBefore, renderAfter }: Props) {
+export function VisitorForm({ 
+  formData, 
+  setFormData, 
+  renderBefore, 
+  renderAfter,
+  errors = {} 
+}: Props) {
   return (
     <ScrollView 
       style={styles.container} 
@@ -25,29 +34,42 @@ export function VisitorForm({ formData, setFormData, renderBefore, renderAfter }
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Visitor Details</Text>
-        <Dropdown
-          value={formData.whomToMeet}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, whomToMeet: value }))}
-          options={staff}
-          placeholder="Whom to Meet *"
-          icon="person-pin"
-        />
+        
+        <View style={styles.inputWrapper}>
+          <Dropdown
+            value={formData.whomToMeet}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, whomToMeet: value }))}
+            options={staff}
+            placeholder="Whom to Meet *"
+            icon="person-pin"
+            error={errors.whomToMeet}
+          />
+          <InputHint hint="Select the person you want to meet" />
+        </View>
 
-        <Dropdown
-          value={formData.department}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
-          options={departments}
-          placeholder="Department *"
-          icon="business"
-        />
+        <View style={styles.inputWrapper}>
+          <Dropdown
+            value={formData.department}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
+            options={departments}
+            placeholder="Department *"
+            icon="business"
+            error={errors.department}
+          />
+          <InputHint hint="Select the department you want to visit" />
+        </View>
 
-        <Dropdown
-          value={formData.documentType}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, documentType: value }))}
-          options={documentTypes}
-          placeholder="Document Type *"
-          icon="description"
-        />
+        <View style={styles.inputWrapper}>
+          <Dropdown
+            value={formData.documentType}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, documentType: value }))}
+            options={documentTypes}
+            placeholder="Document Type *"
+            icon="description"
+            error={errors.documentType}
+          />
+          <InputHint hint="Select the type of ID you will provide" />
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -81,5 +103,14 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 16,
     marginLeft: 4,
+  },
+  inputWrapper: {
+    marginBottom: 16,
+  },
+  hint: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    marginLeft: 8,
   },
 }); 
