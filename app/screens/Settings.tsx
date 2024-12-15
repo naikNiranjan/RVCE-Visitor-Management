@@ -4,38 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '@/constants/Colors';
-import { useTheme } from '../context/ThemeContext';
-import { auth } from '../../FirebaseConfig';
 
 export default function Settings() {
   const navigation = useNavigation();
-  const { isDarkMode, toggleTheme } = useTheme();
-
-  const handleSignOut = async () => {
-    try {
-      await auth.signOut();
-      // Navigate to login or auth screen
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const [isNotificationsEnabled, setIsNotificationsEnabled] = React.useState(true);
+  const [isLocationEnabled, setIsLocationEnabled] = React.useState(true);
 
   const renderSettingItem = (
     title: string, 
     icon: keyof typeof Ionicons.glyphMap, 
-    onPress?: () => void,
     hasSwitch?: boolean,
     value?: boolean,
     onValueChange?: (value: boolean) => void
   ) => (
-    <Pressable 
-      style={styles.settingItem}
-      onPress={onPress}
-    >
+    <View style={styles.settingItem}>
       <View style={styles.settingIconContainer}>
         <Ionicons name={icon} size={22} color={Colors.PRIMARY} />
       </View>
@@ -50,11 +33,12 @@ export default function Settings() {
       ) : (
         <Ionicons name="chevron-forward" size={20} color="#666" />
       )}
-    </Pressable>
+    </View>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
         <Pressable 
           style={styles.backButton} 
@@ -65,6 +49,7 @@ export default function Settings() {
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
+      {/* Settings Content */}
       <View style={styles.content}>
         {/* Preferences Section */}
         <View style={styles.section}>
@@ -72,51 +57,27 @@ export default function Settings() {
           {renderSettingItem(
             'Dark Mode', 
             'moon-outline', 
-            undefined,
             true, 
             isDarkMode, 
-            toggleTheme
+            setIsDarkMode
           )}
+          
+          
         </View>
 
         {/* Account Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          {renderSettingItem(
-            'Change Password', 
-            'lock-closed-outline',
-            () => navigation.navigate('ChangePassword')
-          )}
-          {renderSettingItem(
-            'Privacy', 
-            'shield-outline',
-            () => navigation.navigate('Privacy')
-          )}
+          {renderSettingItem('Change Password', 'lock-closed-outline')}
+          {renderSettingItem('Privacy', 'shield-outline')}
         </View>
 
         {/* More Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>More</Text>
-          {renderSettingItem(
-            'About', 
-            'information-circle-outline',
-            () => navigation.navigate('About')
-          )}
-          {renderSettingItem(
-            'Help', 
-            'help-circle-outline',
-            () => navigation.navigate('Help')
-          )}
-          {renderSettingItem(
-            'Terms of Service', 
-            'document-text-outline',
-            () => navigation.navigate('TermsOfService')
-          )}
-          {renderSettingItem(
-            'Sign Out', 
-            'log-out-outline',
-            handleSignOut
-          )}
+          {renderSettingItem('About', 'information-circle-outline')}
+          {renderSettingItem('Help', 'help-circle-outline')}
+          {renderSettingItem('Terms of Service', 'document-text-outline')}
         </View>
 
         {/* Version Info */}

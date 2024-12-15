@@ -21,13 +21,6 @@ export type RootStackParamList = {
   Support: undefined;
   Profile: undefined;
   SignOut: undefined;
-  Settings: undefined;
-  ChangePassword: undefined;
-  Privacy: undefined;
-  About: undefined;
-  Help: undefined;
-  TermsOfService: undefined;
-  Login: undefined;
 };
 
 export type VisitorDetailsRouteProp = RouteProp<RootStackParamList, 'VisitorDetails'>;
