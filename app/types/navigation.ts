@@ -1,10 +1,10 @@
-import { VisitorData } from './visitor';
+import { RouteProp } from '@react-navigation/native';
 
 export type RootStackParamList = {
   Home: undefined;
   VisitorLog: undefined;
   VisitorDetails: {
-    visitor: VisitorData;
+    visitorId: string;
   };
   VisitorRegistration: undefined;
   VisitorAdditionalDetails: {
@@ -15,6 +15,12 @@ export type RootStackParamList = {
     formData: any;
     visitorId: string;
   };
+  EditProfile: undefined;
+  NotificationSettings: undefined;
+  PrivacySettings: undefined;
+  Support: undefined;
+  Profile: undefined;
+  SignOut: undefined;
 };
 
 export type VisitorDetailsRouteProp = RouteProp<RootStackParamList, 'VisitorDetails'>;

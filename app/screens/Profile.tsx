@@ -1,19 +1,105 @@
 // app/screens/Profile.tsx
 
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '@/constants/Colors';
 import { auth } from '../../FirebaseConfig';
+import { signOut } from 'firebase/auth';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function Profile() {
   const navigation = useNavigation();
   const user = auth.currentUser;
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      // Navigation will be handled by the auth state listener
+    } catch (error) {
+      console.error('Error signing out:', error);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    }
+  };
+
+  const handleEditProfile = () => {
+    navigation.navigate('EditProfile');
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0].uri) {
+        setProfileImage(result.assets[0].uri);
+        // Here you would typically upload the image to storage
+        // and update the user's profile
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const profileOptions = [
+    {
+      id: 'edit',
+      title: 'Edit Profile',
+      icon: 'person-outline',
+      onPress: handleEditProfile,
+    },
+    {
+      id: 'notifications',
+      title: 'Notifications',
+      icon: 'notifications-outline',
+      onPress: () => navigation.navigate('NotificationSettings'),
+    },
+    {
+      id: 'privacy',
+      title: 'Privacy',
+      icon: 'lock-closed-outline',
+      onPress: () => navigation.navigate('PrivacySettings'),
+    },
+    {
+      id: 'help',
+      title: 'Help & Support',
+      icon: 'help-circle-outline',
+      onPress: () => navigation.navigate('Support'),
+    },
+    {
+      id: 'signout',
+      title: 'Sign Out',
+      icon: 'log-out-outline',
+      onPress: () => {
+        Alert.alert(
+          'Sign Out',
+          'Are you sure you want to sign out?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Sign Out',
+              onPress: handleSignOut,
+              style: 'destructive',
+            },
+          ]
+        );
+      },
+    },
+  ] as const;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
       <View style={styles.header}>
         <Pressable 
           style={styles.backButton} 
@@ -24,24 +110,31 @@ export default function Profile() {
         <Text style={styles.headerTitle}>Profile</Text>
       </View>
 
-      {/* Profile Content */}
       <View style={styles.content}>
-        {/* Profile Picture Section */}
         <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <Ionicons name="person-circle-outline" size={80} color={Colors.PRIMARY} />
-          </View>
-          <Text style={styles.userName}>{user?.email}</Text>
-          <Text style={styles.userEmail}>john.doe@example.com</Text>
+          <Pressable style={styles.avatarContainer} onPress={handlePickImage}>
+            {profileImage ? (
+              <Image 
+                source={{ uri: profileImage }} 
+                style={styles.profileImage}
+              />
+            ) : (
+              <Ionicons name="person-circle-outline" size={80} color={Colors.PRIMARY} />
+            )}
+            <View style={styles.editIconContainer}>
+              <Ionicons name="camera" size={20} color="#fff" />
+            </View>
+          </Pressable>
+          <Text style={styles.userName}>{user?.displayName || 'User'}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
 
-        {/* Profile Options */}
         <View style={styles.optionsContainer}>
-          {profileOptions.map((option, index) => (
+          {profileOptions.map((option) => (
             <Pressable 
               key={option.id}
               style={styles.optionItem}
-              onPress={() => console.log(`${option.title} pressed`)}
+              onPress={option.onPress}
             >
               <View style={styles.optionIcon}>
                 <Ionicons name={option.icon} size={24} color={Colors.PRIMARY} />
@@ -55,13 +148,6 @@ export default function Profile() {
     </SafeAreaView>
   );
 }
-
-const profileOptions = [
-  { id: 1, title: 'Edit Profile', icon: 'person-outline' },
-  { id: 2, title: 'Notifications', icon: 'notifications-outline' },
-  { id: 3, title: 'Privacy', icon: 'lock-closed-outline' },
-  { id: 4, title: 'Help & Support', icon: 'help-circle-outline' },
-] as const;
 
 const styles = StyleSheet.create({
   container: {
@@ -94,7 +180,21 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   avatarContainer: {
+    position: 'relative',
     marginBottom: 12,
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  editIconContainer: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    backgroundColor: Colors.PRIMARY,
+    borderRadius: 12,
+    padding: 4,
   },
   userName: {
     fontSize: 24,

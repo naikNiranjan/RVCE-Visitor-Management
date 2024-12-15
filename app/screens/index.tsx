@@ -16,6 +16,10 @@ import {VisitorDetails} from './VisitorDetails';
 import CabSuccess from './cab-success';
 import QuickCheckInForm from './quick-check-in-form';
 import { VisitorSuccess } from './visitor-success';
+import { EditProfile } from './EditProfile';
+import { NotificationSettings } from './NotificationSettings';
+import { PrivacySettings } from './PrivacySettings';
+import { Support } from './Support';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -131,6 +135,26 @@ const AppNavigator = () => {
           title: 'Check-In Successful',
           headerShown: false 
         }}
+      />
+      <Stack.Screen 
+        name="EditProfile" 
+        component={EditProfile}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="NotificationSettings" 
+        component={NotificationSettings}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="PrivacySettings" 
+        component={PrivacySettings}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="Support" 
+        component={Support}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
