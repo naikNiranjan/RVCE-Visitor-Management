@@ -44,15 +44,39 @@ export interface DropdownOption {
   value: string;
 }
 
+export interface CabFormData extends VisitorFormData {
+  cabProvider: string;
+  driverName?: string;
+  driverNumber?: string;
+}
+
+export interface CabAdditionalDetailsFormData extends AdditionalDetailsFormData {
+  cabProvider: string;
+  driverName: string;
+  driverNumber: string;
+}
+
 export type RootStackParamList = {
-  VisitorRegistration: undefined;
-  VisitorAdditionalDetails: {
-    formData: VisitorFormData;
+  Home: undefined;
+  QuickCheckIn: undefined;
+  CabEntry: undefined;
+  ApprovalStatus: undefined;
+  TodaysVisitors: undefined;
+  VisitorEntry: undefined;
+  Document: undefined;
+  VisitorLog: undefined;
+  VisitorDetails: undefined;
+  Register: undefined;
+  CabAdditionalDetails: {
+    formData: CabFormData;
     visitorId: string;
   };
   VisitorSuccess: {
     formData: VisitorFormData & AdditionalDetailsFormData;
     visitorId: string;
   };
-  VisitorLog: undefined;
+  CabSuccess: {
+    formData: CabFormData & AdditionalDetailsFormData;
+    visitorId: string;
+  };
 }; 

@@ -9,12 +9,12 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 interface Props {
-  route: RouteProp<RootStackParamList, 'VisitorSuccess'>;
+  route: RouteProp<RootStackParamList, 'CabSuccess'>;
 }
 
 type SuccessNavigationProp = StackNavigationProp<RootStackParamList>;
 
-export function VisitorSuccess({ route }: Props) {
+export default function CabSuccess({ route }: Props) {
   const { formData, visitorId } = route.params;
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
   const navigation = useNavigation<SuccessNavigationProp>();
@@ -61,15 +61,27 @@ export function VisitorSuccess({ route }: Props) {
           <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
         </View>
         
-        <Text style={styles.title}>Check-In Successful!</Text>
+        <Text style={styles.title}>Cab Entry Successful!</Text>
         
         <View style={styles.detailsContainer}>
           <DetailRow label="Name" value={formData.name} />
           <DetailRow label="Contact" value={formData.contactNumber} />
           <DetailRow label="Purpose" value={formData.purposeOfVisit} />
+          <DetailRow label="Cab Provider" value={formData.cabProvider} />
           <DetailRow label="Department" value={formData.department} />
           <DetailRow label="Meeting With" value={formData.whomToMeet} />
-          <DetailRow label="Number of Visitors" value={formData.visitorCount.toString()} />
+          {formData.driverName && (
+            <DetailRow label="Driver Name" value={formData.driverName} />
+          )}
+          {formData.driverNumber && (
+            <DetailRow label="Driver Contact" value={formData.driverNumber} />
+          )}
+          {formData.vehicleNumber && (
+            <DetailRow label="Vehicle Number" value={formData.vehicleNumber} />
+          )}
+          {formData.visitorCount && (
+            <DetailRow label="Number of Visitors" value={formData.visitorCount.toString()} />
+          )}
           {checkInTime && (
             <DetailRow 
               label="Check-In Time" 
@@ -79,7 +91,7 @@ export function VisitorSuccess({ route }: Props) {
         </View>
 
         <View style={styles.idContainer}>
-          <Text style={styles.idLabel}>Visitor ID:</Text>
+          <Text style={styles.idLabel}>Entry ID:</Text>
           <Text style={styles.idValue}>{visitorId}</Text>
         </View>
 

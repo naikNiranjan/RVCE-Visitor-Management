@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './Home';
 import QuickCheckInScreen from './quick-check-in';
 import CabEntry from './cab-entry';
+import CabAdditionalDetails from './cab-additional-details';
 import ApprovalStatus from './ApprovaStatus';
 import TodaysVisitors from './TodaysVisitors';
 import { Colors } from '@/constants/Colors';
@@ -12,6 +13,7 @@ import VisitorEntry from './VisitorEntry';
 import Document from './document';
 import VisitorLog from './VisitorLog';
 import {VisitorDetails} from './VisitorDetails';
+import CabSuccess from './cab-success';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -96,6 +98,19 @@ const AppNavigator = () => {
         name="Register" 
         component={VisitorEntry} 
         options={{ title: 'Register' }}
+      />
+      <Stack.Screen 
+        name="CabAdditionalDetails" 
+        component={CabAdditionalDetails} 
+        options={{ title: 'Additional Details' }}
+      />
+      <Stack.Screen 
+        name="CabSuccess" 
+        component={CabSuccess}
+        options={{ 
+          title: 'Entry Details',
+          headerShown: false 
+        }}
       />
     </Stack.Navigator>
   );

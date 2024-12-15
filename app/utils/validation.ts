@@ -136,15 +136,30 @@ export function validateField(field: keyof FormErrors, value: string): string | 
   return validationRules[field](value);
 }
 
-export function validateForm(formData: Record<string, string>): FormErrors {
-  const errors: FormErrors = {};
-  
-  (Object.keys(formData) as Array<keyof FormErrors>).forEach((field) => {
-    if (validationRules[field]) {
-      const error = validateField(field, formData[field]);
-      if (error) errors[field] = error;
-    }
-  });
+export function validateForm(formData: CabFormData) {
+  const errors: Record<string, string> = {};
+
+  // Required fields
+  if (!formData.name) {
+    errors.name = 'Name is required';
+  }
+  if (!formData.contactNumber) {
+    errors.contactNumber = 'Contact number is required';
+  }
+  if (!formData.purposeOfVisit) {
+    errors.purposeOfVisit = 'Purpose of visit is required';
+  }
+  if (!formData.cabProvider) {
+    errors.cabProvider = 'Cab provider is required';
+  }
+
+  // Optional driver details validation (only if provided)
+  if (formData.driverName && formData.driverName.length < 2) {
+    errors.driverName = 'Driver name should be at least 2 characters';
+  }
+  if (formData.driverNumber && !formatters.contactNumber(formData.driverNumber)) {
+    errors.driverNumber = 'Please enter a valid driver contact number';
+  }
 
   return errors;
 }

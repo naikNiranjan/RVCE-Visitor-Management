@@ -1,48 +1,95 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
+import { db } from '../../FirebaseConfig';
+import { collection, addDoc } from 'firebase/firestore';
+import { validateField, validateForm, formatters } from '../utils/validation';
+import { InputHint } from '../components/ui/input-hint';
+import { CAB_PROVIDERS } from '../constants/cab-data';
+import { CabFormData, RootStackParamList } from '../types/visitor';
 
-interface CabFormData {
-  driverName: string;
-  vehicleNumber: string;
-  contactNumber: string;
-  cabProvider: string;
-  purposeOfVisit: string;
+type CabEntryNavigationProp = StackNavigationProp<RootStackParamList, 'CabEntry'>;
+
+interface FormErrors {
+  name?: string;
+  address?: string;
+  contactNumber?: string;
+  vehicleNumber?: string;
+  purposeOfVisit?: string;
+  cabProvider?: string;
+  driverName?: string;
+  driverNumber?: string;
 }
 
-const CAB_PROVIDERS = [
-  { label: 'Ola', value: 'ola' },
-  { label: 'Uber', value: 'uber' },
-  { label: 'Auto', value: 'auto' },
-  { label: 'Private Cab', value: 'private' },
-];
-
 export default function CabEntry() {
+  const navigation = useNavigation<CabEntryNavigationProp>();
   const [formData, setFormData] = useState<CabFormData>({
-    driverName: '',
-    vehicleNumber: '',
+    name: '',
+    address: '',
     contactNumber: '',
-    cabProvider: '',
+    vehicleNumber: '',
     purposeOfVisit: '',
+    typeOfVisit: 'Cab',
+    cabProvider: '',
+    driverName: '',
+    driverNumber: '',
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleNext = () => {
-    if (!formData.driverName || !formData.vehicleNumber || !formData.contactNumber || !formData.cabProvider) {
-      alert('Please fill in all required fields');
+  const validateAndUpdateField = (field: keyof FormErrors, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    const error = validateField(field, value);
+    setErrors(prev => ({
+      ...prev,
+      [field]: error,
+    }));
+  };
+
+  const handleNext = async () => {
+    const formErrors = validateForm(formData);
+    setErrors(formErrors);
+
+    if (Object.keys(formErrors).length > 0) {
+      alert('Please correct the errors before proceeding');
       return;
     }
 
-    router.push({
-      pathname: '/cab-additional-details',
-      params: { formData: JSON.stringify(formData) }
-    });
+    setIsSubmitting(true);
+
+    try {
+      const visitorRef = await addDoc(collection(db, 'visitors'), {
+        ...formData,
+        status: 'pending',
+        registrationDate: new Date().toISOString(),
+        checkInTime: null,
+        checkOutTime: null,
+        type: 'cab',
+      });
+
+      navigation.navigate('CabAdditionalDetails', { 
+        formData,
+        visitorId: visitorRef.id 
+      });
+    } catch (error) {
+      console.error('Error saving visitor data:', error);
+      alert('Error saving visitor data. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Cab Entry Registration</Text>
+        <Text style={styles.headerSubtitle}>Please fill in the cab and visitor details</Text>
+      </View>
+
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -51,47 +98,36 @@ export default function CabEntry() {
         <View style={styles.inputGroup}>
           <View style={styles.labelContainer}>
             <MaterialIcons name="person" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Driver Name*</Text>
+            <Text style={styles.label}>Name of Visitor*</Text>
           </View>
           <TextInput
-            value={formData.driverName}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, driverName: text }))}
-            placeholder="Enter driver name"
-            style={styles.input}
+            value={formData.name}
+            onChangeText={(text) => validateAndUpdateField('name', text)}
+            onBlur={() => validateField('name', formData.name)}
+            placeholder="Enter visitor name"
+            style={[
+              styles.input,
+              errors.name ? styles.inputError : null
+            ]}
+            accessibilityLabel="Name of Visitor"
           />
+          <InputHint hint="Enter full name using only letters and spaces (2-50 characters)" />
+          {errors.name && (
+            <Text style={styles.errorText}>{errors.name}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
           <View style={styles.labelContainer}>
-            <MaterialIcons name="directions-car" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Vehicle Number*</Text>
+            <MaterialIcons name="location-on" size={20} color="#6B46C1" />
+            <Text style={styles.label}>Address</Text>
           </View>
           <TextInput
-            value={formData.vehicleNumber}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, vehicleNumber: text }))}
-            placeholder="Enter vehicle number"
+            value={formData.address}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
+            placeholder="Enter address"
             style={styles.input}
-            autoCapitalize="characters"
           />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <View style={styles.labelContainer}>
-            <MaterialIcons name="local-taxi" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Cab Provider*</Text>
-          </View>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.cabProvider}
-              onValueChange={(itemValue) => setFormData(prev => ({ ...prev, cabProvider: itemValue }))}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select cab provider" value="" />
-              {CAB_PROVIDERS.map((provider) => (
-                <Picker.Item key={provider.value} label={provider.label} value={provider.value} />
-              ))}
-            </Picker>
-          </View>
         </View>
 
         <View style={styles.inputGroup}>
@@ -101,12 +137,49 @@ export default function CabEntry() {
           </View>
           <TextInput
             value={formData.contactNumber}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, contactNumber: text }))}
+            onChangeText={(text) => {
+              const formatted = formatters.contactNumber(text);
+              validateAndUpdateField('contactNumber', formatted);
+            }}
+            onBlur={() => validateField('contactNumber', formData.contactNumber)}
             placeholder="Enter contact number"
             keyboardType="phone-pad"
-            style={styles.input}
+            style={[
+              styles.input,
+              errors.contactNumber ? styles.inputError : null
+            ]}
             maxLength={10}
           />
+          <InputHint hint="Enter a valid 10-digit mobile number" />
+          {errors.contactNumber && (
+            <Text style={styles.errorText}>{errors.contactNumber}</Text>
+          )}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelContainer}>
+            <MaterialIcons name="directions-car" size={20} color="#6B46C1" />
+            <Text style={styles.label}>Vehicle Number (Optional)</Text>
+          </View>
+          <TextInput
+            value={formData.vehicleNumber}
+            onChangeText={(text) => {
+              const formatted = formatters.vehicleNumber(text);
+              validateAndUpdateField('vehicleNumber', formatted);
+            }}
+            onBlur={() => validateField('vehicleNumber', formData.vehicleNumber)}
+            placeholder="Enter vehicle number (e.g., KA01AB1234)"
+            style={[
+              styles.input,
+              errors.vehicleNumber ? styles.inputError : null
+            ]}
+            autoCapitalize="characters"
+            maxLength={12}
+          />
+          <InputHint hint="Format: KA01AB1234 (State Code)(District)(Letters)(Numbers)" />
+          {errors.vehicleNumber && (
+            <Text style={styles.errorText}>{errors.vehicleNumber}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -123,16 +196,89 @@ export default function CabEntry() {
             numberOfLines={3}
             textAlignVertical="top"
           />
+          <InputHint hint="Minimum 10 characters describing the purpose of visit" />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelContainer}>
+            <MaterialIcons name="local-taxi" size={20} color="#6B46C1" />
+            <Text style={styles.label}>Cab Provider*</Text>
+          </View>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={formData.cabProvider}
+              onValueChange={(value: string) => setFormData(prev => ({ ...prev, cabProvider: value }))}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select cab provider" value="" />
+              {CAB_PROVIDERS.map((provider) => (
+                <Picker.Item 
+                  key={provider.value} 
+                  label={provider.label} 
+                  value={provider.value} 
+                />
+              ))}
+            </Picker>
+          </View>
+          <InputHint hint="Select the cab service provider (Required)" />
+          {errors.cabProvider && (
+            <Text style={styles.errorText}>{errors.cabProvider}</Text>
+          )}
+        </View>
+
+        <View style={styles.sectionDivider}>
+          <Text style={styles.sectionTitle}>Driver Details (Optional)</Text>
+          <Text style={styles.sectionSubtitle}>Fill if driver details are available</Text>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelContainer}>
+            <MaterialIcons name="person" size={20} color="#6B46C1" />
+            <Text style={styles.label}>Driver Name</Text>
+          </View>
+          <TextInput
+            value={formData.driverName}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, driverName: text }))}
+            placeholder="Enter driver name"
+            style={styles.input}
+          />
+          <InputHint hint="Enter the full name of the driver if available" />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelContainer}>
+            <MaterialIcons name="phone" size={20} color="#6B46C1" />
+            <Text style={styles.label}>Driver Contact Number</Text>
+          </View>
+          <TextInput
+            value={formData.driverNumber}
+            onChangeText={(text) => {
+              const formatted = formatters.contactNumber(text);
+              setFormData(prev => ({ ...prev, driverNumber: formatted }));
+            }}
+            placeholder="Enter driver contact number"
+            keyboardType="phone-pad"
+            style={styles.input}
+            maxLength={10}
+          />
+          <InputHint hint="Enter a valid 10-digit mobile number if available" />
         </View>
       </ScrollView>
       
       <TouchableOpacity 
-        style={styles.nextButton}
+        style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
         onPress={handleNext}
         activeOpacity={0.8}
+        disabled={isSubmitting}
       >
-        <Text style={styles.nextButtonText}>Next</Text>
-        <MaterialIcons name="arrow-forward" size={24} color="#fff" />
+        {isSubmitting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <>
+            <Text style={styles.nextButtonText}>Next</Text>
+            <MaterialIcons name="arrow-forward" size={24} color="#fff" />
+          </>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -142,6 +288,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  header: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#666',
   },
   content: {
     flex: 1,
@@ -179,23 +341,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 2,
   },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 2,
-  },
-  picker: {
-    height: 50,
-  },
   multilineInput: {
     minHeight: 100,
     paddingTop: 12,
@@ -224,4 +369,51 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 8,
   },
-});
+  inputError: {
+    borderColor: '#dc2626',
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 8,
+  },
+  nextButtonDisabled: {
+    opacity: 0.7,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3.84,
+    elevation: 2,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+  },
+  sectionDivider: {
+    marginVertical: 24,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+}); 

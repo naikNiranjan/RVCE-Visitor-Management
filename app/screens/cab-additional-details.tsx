@@ -1,82 +1,180 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { AdditionalDetailsFormData, RootStackParamList } from '../types/visitor';
+import { Header } from '../components/ui/header';
 import { PhotoUploadSection } from '../components/visitor/photo-upload-section';
+import { VisitorForm } from '../components/visitor/visitor-form';
 import { SubmitButton } from '../components/ui/submit-button';
+import { Counter } from '../components/ui/counter';
+import { db, storage } from '../../FirebaseConfig';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { validateField, formatters } from '../utils/validation';
 
-interface AdditionalDetailsFormData {
-  driverPhotoUri: string;
-  vehiclePhotoUri: string;
-  licensePhotoUri: string;
-}
+type ScreenRouteProp = RouteProp<RootStackParamList, 'VisitorAdditionalDetails'>;
+type ScreenNavigationProp = StackNavigationProp<RootStackParamList, 'VisitorAdditionalDetails'>;
 
-const CabAdditionalDetails = () => {
-  const params = useLocalSearchParams();
-  const previousFormData = JSON.parse(params.formData as string);
+export default function CabAdditionalDetails() {
+  const navigation = useNavigation<ScreenNavigationProp>();
+  const route = useRoute<ScreenRouteProp>();
+  const { formData: previousFormData, visitorId } = route.params;
 
   const [formData, setFormData] = useState<AdditionalDetailsFormData>({
-    driverPhotoUri: '',
-    vehiclePhotoUri: '',
-    licensePhotoUri: '',
+    whomToMeet: '',
+    department: '',
+    documentType: '',
+    documentUri: '',
+    visitorPhotoUri: '',
+    sendNotification: true,
+    visitorCount: 1,
   });
 
-  const handleSubmit = () => {
-    if (!formData.driverPhotoUri || !formData.vehiclePhotoUri || !formData.licensePhotoUri) {
-      alert('Please upload all required photos');
+  const uploadImage = async (uri: string, path: string) => {
+    try {
+      console.log('Starting image upload:', path);
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      // Generate a unique filename with original extension
+      const extension = uri.split('.').pop() || 'jpg';
+      const filename = `${Date.now()}.${extension}`;
+      const imageRef = ref(storage, `${path}/${filename}`);
+      
+      // Upload the image
+      console.log('Uploading to:', `${path}/${filename}`);
+      const uploadResult = await uploadBytes(imageRef, blob);
+      console.log('Upload successful:', uploadResult);
+      
+      // Get the download URL
+      const downloadURL = await getDownloadURL(imageRef);
+      console.log('Download URL:', downloadURL);
+      return downloadURL;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error; // Re-throw to handle in calling function
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.whomToMeet || !formData.department || !formData.documentType) {
+      alert('Please fill in all required fields');
       return;
     }
 
-    // TODO: Implement submission logic
-    console.log('Submitting:', { ...previousFormData, ...formData });
-    router.push('/cab-entry-success');
+    try {
+      let visitorPhotoUrl = '';
+      let documentUrl = '';
+
+      // Upload visitor photo if exists
+      if (formData.visitorPhotoUri) {
+        try {
+          visitorPhotoUrl = await uploadImage(
+            formData.visitorPhotoUri,
+            `visitors/${visitorId}/photos`
+          );
+        } catch (error) {
+          console.error('Error uploading visitor photo:', error);
+          alert('Failed to upload visitor photo. Please try again.');
+          return;
+        }
+      }
+
+      // Upload document if exists
+      if (formData.documentUri) {
+        try {
+          documentUrl = await uploadImage(
+            formData.documentUri,
+            `visitors/${visitorId}/documents`
+          );
+        } catch (error) {
+          console.error('Error uploading document:', error);
+          alert('Failed to upload document. Please try again.');
+          return;
+        }
+      }
+
+      // Update the visitor document with additional details
+      const visitorRef = doc(db, 'visitors', visitorId);
+      
+      await updateDoc(visitorRef, {
+        additionalDetails: {
+          whomToMeet: formData.whomToMeet,
+          department: formData.department,
+          documentType: formData.documentType,
+          visitorCount: formData.visitorCount,
+          sendNotification: formData.sendNotification,
+          visitorPhotoUrl,
+          documentUrl,
+        },
+        status: 'In',
+        lastUpdated: new Date().toISOString(),
+        checkInTime: new Date().toISOString(),
+      });
+
+      // Navigate to success screen with complete data
+      navigation.navigate('CabSuccess', {
+        formData: { 
+          ...previousFormData,
+          ...formData,
+          visitorPhotoUrl,
+          documentUrl,
+        },
+        visitorId,
+      });
+    } catch (error) {
+      console.error('Error updating visitor data:', error);
+      alert('Error saving visitor data. Please try again.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <MaterialIcons name="arrow-back" size={24} color="#6B46C1" />
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>Additional Details</Text>
-          <Text style={styles.headerSubtitle}>Please provide required photos</Text>
-        </View>
-      </View>
+      <Header 
+        title="Additional Details" 
+        onBack={() => navigation.goBack()} 
+      />
 
       <View style={styles.content}>
         <PhotoUploadSection 
-          type="driver"
-          label="Driver Photo"
-          uri={formData.driverPhotoUri}
-          onPhotoSelected={(uri) => setFormData(prev => ({ 
+          type="visitor" 
+          uri={formData.visitorPhotoUri}
+          onPhotoSelected={(uri: string) => setFormData(prev => ({ 
             ...prev, 
-            driverPhotoUri: uri 
+            visitorPhotoUri: uri 
           }))}
         />
 
-        <PhotoUploadSection 
-          type="vehicle"
-          label="Vehicle Photo"
-          uri={formData.vehiclePhotoUri}
-          onPhotoSelected={(uri) => setFormData(prev => ({ 
-            ...prev, 
-            vehiclePhotoUri: uri 
+        <Counter
+          label="Number of Visitors"
+          count={formData.visitorCount}
+          onIncrement={() => setFormData(prev => ({
+            ...prev,
+            visitorCount: prev.visitorCount + 1
           }))}
+          onDecrement={() => setFormData(prev => ({
+            ...prev,
+            visitorCount: prev.visitorCount - 1
+          }))}
+          minValue={1}
+          maxValue={10}
         />
 
-        <PhotoUploadSection 
-          type="license"
-          label="Driver's License"
-          uri={formData.licensePhotoUri}
-          onPhotoSelected={(uri) => setFormData(prev => ({ 
-            ...prev, 
-            licensePhotoUri: uri 
-          }))}
+        <VisitorForm
+          formData={formData}
+          setFormData={setFormData}
+          renderAfter={() => formData.documentType && (
+            <PhotoUploadSection 
+              type="document" 
+              uri={formData.documentUri}
+              onPhotoSelected={(uri) => setFormData(prev => ({ 
+                ...prev, 
+                documentUri: uri 
+              }))}
+            />
+          )}
         />
       </View>
 
@@ -88,35 +186,12 @@ const CabAdditionalDetails = () => {
       </View>
     </SafeAreaView>
   );
-};
-
-export default CabAdditionalDetails;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#666',
   },
   content: {
     flex: 1,
