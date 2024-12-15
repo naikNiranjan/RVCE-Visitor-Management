@@ -59,7 +59,7 @@ export default function CabAdditionalDetails() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.whomToMeet || !formData.department || !formData.documentType) {
+    if (!formData.department || !formData.documentType) {
       alert('Please fill in all required fields');
       return;
     }

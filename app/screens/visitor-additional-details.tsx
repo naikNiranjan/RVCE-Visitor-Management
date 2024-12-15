@@ -23,8 +23,9 @@ export function VisitorAdditionalDetails() {
   const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState<AdditionalDetailsFormData>({
-    whomToMeet: '',
+    
     department: '',
+    whomToMeet: '',
     documentType: '',
     documentUri: '',
     visitorPhotoUri: '',
@@ -70,7 +71,7 @@ export function VisitorAdditionalDetails() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.whomToMeet || !formData.department || !formData.documentType) {
+    if (!formData.department || !formData.documentType) {
       Alert.alert('Missing Fields', 'Please fill in all required fields');
       return;
     }
