@@ -101,8 +101,10 @@ const AppNavigator = () => {
       />
       <Stack.Screen 
         name="VisitorDetails" 
-        component={VisitorDetails} 
-        options={{ title: 'Visitor Details' }}
+        component={VisitorDetails}
+        options={{ 
+          headerShown: false 
+        }}
       />
       <Stack.Screen 
         name="Register" 

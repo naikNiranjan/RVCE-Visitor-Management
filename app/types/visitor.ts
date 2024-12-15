@@ -84,7 +84,9 @@ export type RootStackParamList = {
   VisitorEntry: undefined;
   Document: undefined;
   VisitorLog: undefined;
-  VisitorDetails: undefined;
+  VisitorDetails: {
+    visitorId: string;
+  };
   Register: undefined;
   CabAdditionalDetails: {
     formData: CabFormData;
