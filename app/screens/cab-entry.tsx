@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Picker } from '@react-native-picker/picker';
+import { Dropdown } from '../components/ui/dropdown';
 import { db } from '../../FirebaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
-import { validateField, validateForm, formatters } from '../utils/validation';
+import { validateField, formatters } from '../utils/validation';
 import { InputHint } from '../components/ui/input-hint';
+import { RootStackParamList } from '../types/visitor';
 import { CAB_PROVIDERS } from '../constants/cab-data';
-import { CabFormData, RootStackParamList } from '../types/visitor';
 
 type CabEntryNavigationProp = StackNavigationProp<RootStackParamList, 'CabEntry'>;
 
@@ -27,13 +27,12 @@ interface FormErrors {
 
 export default function CabEntry() {
   const navigation = useNavigation<CabEntryNavigationProp>();
-  const [formData, setFormData] = useState<CabFormData>({
+  const [formData, setFormData] = useState({
     name: '',
     address: '',
     contactNumber: '',
     vehicleNumber: '',
     purposeOfVisit: '',
-    typeOfVisit: 'Cab',
     cabProvider: '',
     driverName: '',
     driverNumber: '',
@@ -42,8 +41,18 @@ export default function CabEntry() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateAndUpdateField = (field: keyof FormErrors, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    const error = validateField(field, value);
+    let formattedValue = value;
+    
+    // Apply formatters
+    if (field === 'contactNumber' || field === 'driverNumber') {
+      formattedValue = formatters.contactNumber(value);
+    } else if (field === 'vehicleNumber') {
+      formattedValue = formatters.vehicleNumber(value);
+    }
+
+    setFormData(prev => ({ ...prev, [field]: formattedValue }));
+    
+    const error = validateField(field, formattedValue);
     setErrors(prev => ({
       ...prev,
       [field]: error,
@@ -51,11 +60,41 @@ export default function CabEntry() {
   };
 
   const handleNext = async () => {
-    const formErrors = validateForm(formData);
+    // Validate all required fields
+    const formErrors: FormErrors = {};
+    const requiredFields = ['name', 'contactNumber', 'purposeOfVisit', 'cabProvider'];
+    
+    requiredFields.forEach((field) => {
+      const error = validateField(field as keyof FormErrors, formData[field as keyof typeof formData]);
+      if (error) {
+        formErrors[field as keyof FormErrors] = error;
+      }
+    });
+
+    // Validate optional fields if they have values
+    if (formData.driverName) {
+      const error = validateField('driverName', formData.driverName);
+      if (error) formErrors.driverName = error;
+    }
+
+    if (formData.driverNumber) {
+      const error = validateField('driverNumber', formData.driverNumber);
+      if (error) formErrors.driverNumber = error;
+    }
+
+    if (formData.vehicleNumber) {
+      const error = validateField('vehicleNumber', formData.vehicleNumber);
+      if (error) formErrors.vehicleNumber = error;
+    }
+
     setErrors(formErrors);
 
     if (Object.keys(formErrors).length > 0) {
-      alert('Please correct the errors before proceeding');
+      Alert.alert(
+        'Validation Error',
+        'Please correct the errors before proceeding',
+        [{ text: 'OK' }]
+      );
       return;
     }
 
@@ -64,11 +103,12 @@ export default function CabEntry() {
     try {
       const visitorRef = await addDoc(collection(db, 'visitors'), {
         ...formData,
+        type: 'cab',
         status: 'pending',
         registrationDate: new Date().toISOString(),
         checkInTime: null,
         checkOutTime: null,
-        type: 'cab',
+        additionalDetails: null,
       });
 
       navigation.navigate('CabAdditionalDetails', { 
@@ -76,8 +116,8 @@ export default function CabEntry() {
         visitorId: visitorRef.id 
       });
     } catch (error) {
-      console.error('Error saving visitor data:', error);
-      alert('Error saving visitor data. Please try again.');
+      console.error('Error saving cab entry:', error);
+      Alert.alert('Error', 'Failed to save cab entry. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -199,32 +239,20 @@ export default function CabEntry() {
           <InputHint hint="Minimum 10 characters describing the purpose of visit" />
         </View>
 
-        <View style={styles.inputGroup}>
-          <View style={styles.labelContainer}>
-            <MaterialIcons name="local-taxi" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Cab Provider*</Text>
-          </View>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={formData.cabProvider}
-              onValueChange={(value: string) => setFormData(prev => ({ ...prev, cabProvider: value }))}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select cab provider" value="" />
-              {CAB_PROVIDERS.map((provider) => (
-                <Picker.Item 
-                  key={provider.value} 
-                  label={provider.label} 
-                  value={provider.value} 
-                />
-              ))}
-            </Picker>
-          </View>
-          <InputHint hint="Select the cab service provider (Required)" />
-          {errors.cabProvider && (
-            <Text style={styles.errorText}>{errors.cabProvider}</Text>
-          )}
-        </View>
+        <Dropdown
+          value={formData.cabProvider}
+          onValueChange={(value) => {
+            setFormData(prev => ({ ...prev, cabProvider: value }));
+            validateAndUpdateField('cabProvider', value);
+          }}
+          options={CAB_PROVIDERS}
+          placeholder="Cab Provider *"
+          icon="local-taxi"
+        />
+
+        {errors.cabProvider && (
+          <Text style={styles.errorText}>{errors.cabProvider}</Text>
+        )}
 
         <View style={styles.sectionDivider}>
           <Text style={styles.sectionTitle}>Driver Details (Optional)</Text>
@@ -266,10 +294,12 @@ export default function CabEntry() {
       </ScrollView>
       
       <TouchableOpacity 
-        style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+        style={[
+          styles.nextButton, 
+          (!formData.name || !formData.contactNumber || !formData.cabProvider) && styles.disabledButton
+        ]}
         onPress={handleNext}
-        activeOpacity={0.8}
-        disabled={isSubmitting}
+        disabled={!formData.name || !formData.contactNumber || !formData.cabProvider || isSubmitting}
       >
         {isSubmitting ? (
           <ActivityIndicator color="#fff" />

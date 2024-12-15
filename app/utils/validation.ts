@@ -12,6 +12,9 @@ interface FormErrors {
   company?: string;
   personToMeet?: string;
   department?: string;
+  cabProvider?: string;
+  driverName?: string;
+  driverNumber?: string;
 }
 
 interface ValidationRules {
@@ -27,6 +30,9 @@ interface ValidationRules {
   company: (value: string) => string | undefined;
   personToMeet: (value: string) => string | undefined;
   department: (value: string) => string | undefined;
+  cabProvider: (value: string) => string | undefined;
+  driverName: (value: string) => string | undefined;
+  driverNumber: (value: string) => string | undefined;
 }
 
 const validationRules: ValidationRules = {
@@ -39,24 +45,24 @@ const validationRules: ValidationRules = {
   },
 
   address: (value: string) => {
-    if (value && value.trim().length < 5) return 'Address should be at least 5 characters';
-    if (value && /[^\w\s,.\-/#()&]/.test(value)) {
-      return 'Address contains invalid characters';
+    if (!value.trim()) return 'Address is required';
+    if (value.trim().length < 5) {
+      return 'Address should be at least 5 characters';
     }
     return undefined;
   },
 
   contactNumber: (value: string) => {
     if (!value) return 'Contact number is required';
-    const cleanNumber = value.replace(/[^0-9]/g, '');
-    if (cleanNumber.length !== 10) return 'Contact number must be 10 digits';
+    if (!/^\d{10}$/.test(value)) {
+      return 'Contact number must be exactly 10 digits';
+    }
     return undefined;
   },
 
   vehicleNumber: (value: string) => {
     if (!value) return undefined; // Optional field
-    const cleanVehicleNumber = value.replace(/\s+/g, '').toUpperCase();
-    if (!/^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$/.test(cleanVehicleNumber)) {
+    if (!/^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/.test(value.replace(/\s/g, ''))) {
       return 'Invalid vehicle number format (e.g., KA01AB1234)';
     }
     return undefined;
@@ -64,8 +70,9 @@ const validationRules: ValidationRules = {
 
   purposeOfVisit: (value: string) => {
     if (!value.trim()) return 'Purpose of visit is required';
-    if (value.trim().length < 10) return 'Purpose should be at least 10 characters';
-    if (value.trim().length > 200) return 'Purpose should not exceed 200 characters';
+    if (value.trim().length < 10) {
+      return 'Purpose should be at least 10 characters';
+    }
     return undefined;
   },
 
@@ -130,6 +137,27 @@ const validationRules: ValidationRules = {
     }
     return undefined;
   },
+
+  cabProvider: (value: string) => {
+    if (!value) return 'Cab provider is required';
+    return undefined;
+  },
+
+  driverName: (value: string) => {
+    if (!value) return undefined; // Optional
+    if (!/^[a-zA-Z\s]{2,50}$/.test(value.trim())) {
+      return 'Driver name should be 2-50 characters and contain only letters and spaces';
+    }
+    return undefined;
+  },
+
+  driverNumber: (value: string) => {
+    if (!value) return undefined; // Optional
+    if (!/^\d{10}$/.test(value)) {
+      return 'Driver number must be exactly 10 digits';
+    }
+    return undefined;
+  },
 };
 
 export function validateField(field: keyof FormErrors, value: string): string | undefined {
@@ -176,5 +204,9 @@ export const formatters = {
   
   temperature: (value: string): string => {
     return value.replace(/[^0-9.]/g, '');
+  },
+  
+  cabNumber: (value: string) => {
+    return value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   },
 }; 

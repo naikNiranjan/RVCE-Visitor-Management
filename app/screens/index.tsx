@@ -14,6 +14,8 @@ import Document from './document';
 import VisitorLog from './VisitorLog';
 import {VisitorDetails} from './VisitorDetails';
 import CabSuccess from './cab-success';
+import QuickCheckInForm from './quick-check-in-form';
+import { VisitorSuccess } from './visitor-success';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -48,6 +50,14 @@ const AppNavigator = () => {
             </TouchableOpacity>
           ),
         })}
+      />
+      <Stack.Screen 
+        name="QuickCheckInForm" 
+        component={QuickCheckInForm}
+        options={{ 
+          title: 'Quick Check-In',
+          headerShown: false 
+        }}
       />
       <Stack.Screen 
         name="CabEntry" 
@@ -109,6 +119,14 @@ const AppNavigator = () => {
         component={CabSuccess}
         options={{ 
           title: 'Entry Details',
+          headerShown: false 
+        }}
+      />
+      <Stack.Screen 
+        name="VisitorSuccess" 
+        component={VisitorSuccess}
+        options={{ 
+          title: 'Check-In Successful',
           headerShown: false 
         }}
       />

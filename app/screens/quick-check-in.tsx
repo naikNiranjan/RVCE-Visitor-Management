@@ -1,27 +1,80 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '../types/navigation';
-import VisitorEntry from './VisitorEntry';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../types/visitor';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../FirebaseConfig';
+import { formatters } from '../utils/validation';
+import { MaterialIcons } from '@expo/vector-icons';
 
-function QuickCheckInScreen({navigation}) {
+type QuickCheckInNavigationProp = StackNavigationProp<RootStackParamList>;
+
+function QuickCheckInScreen() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  //const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [showNewVisitorMessage, setShowNewVisitorMessage] = useState(false);
+  const navigation = useNavigation<QuickCheckInNavigationProp>();
 
-  function handleCheckIn() {
+  const searchVisitor = async (phone: string) => {
+    try {
+      const visitorsRef = collection(db, 'visitors');
+      const q = query(visitorsRef, where('contactNumber', '==', phone));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        return null;
+      }
+
+      // Get the most recent visitor data
+      let mostRecentVisitor = null;
+      querySnapshot.forEach((doc) => {
+        const visitorData = { id: doc.id, ...doc.data() };
+        if (!mostRecentVisitor || visitorData.registrationDate > mostRecentVisitor.registrationDate) {
+          mostRecentVisitor = visitorData;
+        }
+      });
+
+      return mostRecentVisitor;
+    } catch (error) {
+      console.error('Error searching visitor:', error);
+      throw error;
+    }
+  };
+
+  const handleCheckIn = async () => {
+    if (phoneNumber.length !== 10) {
+      Alert.alert('Invalid Number', 'Please enter a valid 10-digit phone number');
+      return;
+    }
+
     setIsLoading(true);
-    // TODO: Implement check-in logic
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }
+    setShowNewVisitorMessage(false);
 
-  function handleNewRegistration() {
+    try {
+      const visitorData = await searchVisitor(phoneNumber);
+      
+      if (!visitorData) {
+        setShowNewVisitorMessage(true);
+        return;
+      }
+
+      // Navigate to quick check-in form with pre-filled data
+      navigation.navigate('QuickCheckInForm', {
+        existingVisitor: visitorData
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to search visitor. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNewRegistration = () => {
     navigation.navigate('VisitorEntry');
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -33,9 +86,12 @@ function QuickCheckInScreen({navigation}) {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, showNewVisitorMessage && styles.inputError]}
               value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              onChangeText={(text) => {
+                setPhoneNumber(formatters.contactNumber(text));
+                setShowNewVisitorMessage(false);
+              }}
               placeholder="Enter your registered phone number"
               keyboardType="phone-pad"
               maxLength={10}
@@ -43,13 +99,22 @@ function QuickCheckInScreen({navigation}) {
             />
           </View>
 
+          {showNewVisitorMessage && (
+            <View style={styles.messageContainer}>
+              <MaterialIcons name="info" size={20} color="#dc2626" />
+              <Text style={styles.errorMessage}>
+                New Visitor. Please Register First
+              </Text>
+            </View>
+          )}
+
           <TouchableOpacity 
             style={[styles.checkInButton, !phoneNumber && styles.disabledButton]}
             onPress={handleCheckIn}
             disabled={!phoneNumber || isLoading}
           >
             {isLoading ? (
-              <Text style={styles.buttonText}>Checking in...</Text>
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={styles.buttonText}>Check In</Text>
             )}
@@ -62,10 +127,18 @@ function QuickCheckInScreen({navigation}) {
           </View>
 
           <TouchableOpacity 
-            style={styles.registerButton}
+            style={[
+              styles.registerButton,
+              showNewVisitorMessage && styles.highlightedButton
+            ]}
             onPress={handleNewRegistration}
           >
-            <Text style={styles.registerButtonText} onPress={()=>(navigation.navigate('VisitorEntry'))}>New Registration?</Text>
+            <Text style={[
+              styles.registerButtonText,
+              showNewVisitorMessage && styles.highlightedButtonText
+            ]}>
+              New Registration?
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -141,6 +214,31 @@ const styles = StyleSheet.create({
     color: Colors.PRIMARY,
     fontSize: 16,
     fontWeight: '600',
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorMessage: {
+    color: '#dc2626',
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  inputError: {
+    borderColor: '#dc2626',
+  },
+  highlightedButton: {
+    backgroundColor: '#f3f0ff',
+    borderRadius: 8,
+  },
+  highlightedButtonText: {
+    color: '#6B46C1',
+    fontWeight: '700',
   },
 });
 

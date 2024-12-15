@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,17 +10,17 @@ import { VisitorForm } from '../components/visitor/visitor-form';
 import { SubmitButton } from '../components/ui/submit-button';
 import { Counter } from '../components/ui/counter';
 import { db, storage } from '../../FirebaseConfig';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { validateField, formatters } from '../utils/validation';
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'VisitorAdditionalDetails'>;
-type ScreenNavigationProp = StackNavigationProp<RootStackParamList, 'VisitorAdditionalDetails'>;
+type ScreenNavigationProp = StackNavigationProp<RootStackParamList>;
 
 export function VisitorAdditionalDetails() {
-  const navigation = useNavigation<ScreenNavigationProp>();
   const route = useRoute<ScreenRouteProp>();
+  const navigation = useNavigation<ScreenNavigationProp>();
   const { formData: previousFormData, visitorId } = route.params;
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState<AdditionalDetailsFormData>({
     whomToMeet: '',
@@ -32,43 +32,55 @@ export function VisitorAdditionalDetails() {
     visitorCount: 1,
   });
 
-  const uploadImage = async (uri: string, path: string) => {
+  const uploadImage = async (uri: string, path: string): Promise<string> => {
     try {
-      console.log('Starting image upload:', path);
+      if (!uri.startsWith('file://') && !uri.startsWith('content://')) {
+        throw new Error('Invalid image URI');
+      }
+
       const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error('Failed to fetch image');
+      }
+
       const blob = await response.blob();
-      
-      // Generate a unique filename with original extension
-      const extension = uri.split('.').pop() || 'jpg';
-      const filename = `${Date.now()}.${extension}`;
+      if (!blob) {
+        throw new Error('Failed to create blob');
+      }
+
+      const extension = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
       const imageRef = ref(storage, `${path}/${filename}`);
-      
-      // Upload the image
-      console.log('Uploading to:', `${path}/${filename}`);
-      const uploadResult = await uploadBytes(imageRef, blob);
-      console.log('Upload successful:', uploadResult);
-      
-      // Get the download URL
+
+      const uploadTask = await uploadBytes(imageRef, blob);
+      if (!uploadTask) {
+        throw new Error('Upload failed');
+      }
+
       const downloadURL = await getDownloadURL(imageRef);
-      console.log('Download URL:', downloadURL);
+      if (!downloadURL) {
+        throw new Error('Failed to get download URL');
+      }
+
       return downloadURL;
     } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error; // Re-throw to handle in calling function
+      console.error('Error in uploadImage:', error);
+      throw error;
     }
   };
 
   const handleSubmit = async () => {
     if (!formData.whomToMeet || !formData.department || !formData.documentType) {
-      alert('Please fill in all required fields');
+      Alert.alert('Missing Fields', 'Please fill in all required fields');
       return;
     }
+
+    setIsUploading(true);
 
     try {
       let visitorPhotoUrl = '';
       let documentUrl = '';
 
-      // Upload visitor photo if exists
       if (formData.visitorPhotoUri) {
         try {
           visitorPhotoUrl = await uploadImage(
@@ -76,13 +88,15 @@ export function VisitorAdditionalDetails() {
             `visitors/${visitorId}/photos`
           );
         } catch (error) {
-          console.error('Error uploading visitor photo:', error);
-          alert('Failed to upload visitor photo. Please try again.');
+          setIsUploading(false);
+          Alert.alert(
+            'Upload Error',
+            'Failed to upload visitor photo. Please try again.'
+          );
           return;
         }
       }
 
-      // Upload document if exists
       if (formData.documentUri) {
         try {
           documentUrl = await uploadImage(
@@ -90,75 +104,69 @@ export function VisitorAdditionalDetails() {
             `visitors/${visitorId}/documents`
           );
         } catch (error) {
-          console.error('Error uploading document:', error);
-          alert('Failed to upload document. Please try again.');
+          setIsUploading(false);
+          Alert.alert(
+            'Upload Error',
+            'Failed to upload document. Please try again.'
+          );
           return;
         }
       }
 
-      // Only proceed if both uploads were successful
       const visitorRef = doc(db, 'visitors', visitorId);
-      
-      // First, verify the document exists
-      const docSnap = await getDoc(visitorRef);
-      if (!docSnap.exists()) {
-        throw new Error('Visitor document not found');
-      }
+      const checkInTime = new Date().toISOString();
 
-      // Update the visitor document with additional details
-      await updateDoc(visitorRef, {
+      const updateData = {
         additionalDetails: {
           whomToMeet: formData.whomToMeet,
           department: formData.department,
           documentType: formData.documentType,
           visitorCount: formData.visitorCount,
-          sendNotification: formData.sendNotification,
           visitorPhotoUrl,
           documentUrl,
         },
         status: 'In',
-        lastUpdated: new Date().toISOString(),
-        checkInTime: new Date().toISOString(),
-        checkOutTime: null,
-      });
+        checkInTime,
+        lastUpdated: checkInTime,
+      };
 
-      console.log('Document successfully updated');
+      await updateDoc(visitorRef, updateData);
 
-      // Navigate to success screen with complete data
       navigation.navigate('VisitorSuccess', {
-        formData: { 
-          ...previousFormData, 
-          whomToMeet: formData.whomToMeet,
-          department: formData.department,
-          documentType: formData.documentType,
-          visitorCount: formData.visitorCount,
-          sendNotification: formData.sendNotification,
+        formData: {
+          ...previousFormData,
+          ...formData,
           visitorPhotoUrl,
           documentUrl,
         },
         visitorId,
       });
     } catch (error) {
-      console.error('Error updating visitor data:', error);
-      alert('Error saving visitor data. Please try again.');
+      console.error('Error in handleSubmit:', error);
+      Alert.alert(
+        'Error',
+        'Failed to complete registration. Please try again.'
+      );
+    } finally {
+      setIsUploading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header 
-        title="Additional Details" 
-        onBack={() => navigation.goBack()} 
-      />
+      <Header title="Additional Details" onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <PhotoUploadSection 
           type="visitor" 
           uri={formData.visitorPhotoUri}
-          onPhotoSelected={(uri: string) => setFormData(prev => ({ 
-            ...prev, 
-            visitorPhotoUri: uri 
-          }))}
+          onPhotoSelected={(uri: string) => {
+            console.log('Visitor photo selected:', uri);
+            setFormData(prev => ({ 
+              ...prev, 
+              visitorPhotoUri: uri 
+            }));
+          }}
         />
 
         <Counter
@@ -166,14 +174,12 @@ export function VisitorAdditionalDetails() {
           count={formData.visitorCount}
           onIncrement={() => setFormData(prev => ({
             ...prev,
-            visitorCount: prev.visitorCount + 1
+            visitorCount: Math.min(prev.visitorCount + 1, 10)
           }))}
           onDecrement={() => setFormData(prev => ({
             ...prev,
-            visitorCount: prev.visitorCount - 1
+            visitorCount: Math.max(prev.visitorCount - 1, 1)
           }))}
-          minValue={1}
-          maxValue={10}
         />
 
         <VisitorForm
@@ -183,10 +189,13 @@ export function VisitorAdditionalDetails() {
             <PhotoUploadSection 
               type="document" 
               uri={formData.documentUri}
-              onPhotoSelected={(uri) => setFormData(prev => ({ 
-                ...prev, 
-                documentUri: uri 
-              }))}
+              onPhotoSelected={(uri) => {
+                console.log('Document photo selected:', uri);
+                setFormData(prev => ({ 
+                  ...prev, 
+                  documentUri: uri 
+                }));
+              }}
             />
           )}
         />
@@ -195,7 +204,8 @@ export function VisitorAdditionalDetails() {
       <View style={styles.footer}>
         <SubmitButton 
           onPress={handleSubmit}
-          label="Submit"
+          label={isUploading ? "Uploading..." : "Submit"}
+          disabled={isUploading}
         />
       </View>
     </SafeAreaView>

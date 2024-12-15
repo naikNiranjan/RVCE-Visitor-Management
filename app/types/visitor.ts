@@ -59,6 +59,25 @@ export interface CabAdditionalDetailsFormData extends AdditionalDetailsFormData 
 export type RootStackParamList = {
   Home: undefined;
   QuickCheckIn: undefined;
+  QuickCheckInForm: {
+    existingVisitor: {
+      id: string;
+      name: string;
+      contactNumber: string;
+      address: string;
+      vehicleNumber: string;
+      purposeOfVisit: string;
+      typeOfVisit: string;
+      additionalDetails?: {
+        whomToMeet: string;
+        department: string;
+        documentType: string;
+        visitorCount: number;
+        visitorPhotoUrl?: string;
+        documentUrl?: string;
+      };
+    };
+  };
   CabEntry: undefined;
   ApprovalStatus: undefined;
   TodaysVisitors: undefined;

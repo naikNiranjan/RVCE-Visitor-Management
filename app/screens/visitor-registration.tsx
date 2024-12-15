@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,23 +8,9 @@ import { db } from '../../FirebaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
 import { validateField, validateForm, formatters } from '../utils/validation';
 import { InputHint } from '../components/ui/input-hint';
+import { RootStackParamList } from '../types/visitor';
 
-type RootStackParamList = {
-  VisitorRegistration: undefined;
-  VisitorAdditionalDetails: {
-    formData: {
-      name: string;
-      address: string;
-      contactNumber: string;
-      vehicleNumber: string;
-      purposeOfVisit: string;
-      typeOfVisit: string;
-    };
-    visitorId: string;
-  };
-};
-
-type VisitorRegistrationNavigationProp = StackNavigationProp<RootStackParamList>;
+type VisitorRegistrationNavigationProp = StackNavigationProp<RootStackParamList, 'VisitorRegistration'>;
 
 interface FormErrors {
   name?: string;
@@ -48,8 +34,18 @@ export function VisitorRegistration() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateAndUpdateField = (field: keyof FormErrors, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    const error = validateField(field, value);
+    let formattedValue = value;
+    
+    // Apply formatters if needed
+    if (field === 'contactNumber') {
+      formattedValue = formatters.contactNumber(value);
+    } else if (field === 'vehicleNumber') {
+      formattedValue = formatters.vehicleNumber(value);
+    }
+
+    setFormData(prev => ({ ...prev, [field]: formattedValue }));
+    
+    const error = validateField(field, formattedValue);
     setErrors(prev => ({
       ...prev,
       [field]: error,
@@ -57,11 +53,25 @@ export function VisitorRegistration() {
   };
 
   const handleNext = async () => {
-    const formErrors = validateForm(formData);
+    // Validate all fields
+    const formErrors: FormErrors = {};
+    
+    Object.keys(formData).forEach((key) => {
+      const field = key as keyof FormErrors;
+      const error = validateField(field, formData[field]);
+      if (error) {
+        formErrors[field] = error;
+      }
+    });
+
     setErrors(formErrors);
 
     if (Object.keys(formErrors).length > 0) {
-      alert('Please correct the errors before proceeding');
+      Alert.alert(
+        'Validation Error',
+        'Please correct the errors before proceeding',
+        [{ text: 'OK' }]
+      );
       return;
     }
 
@@ -78,12 +88,19 @@ export function VisitorRegistration() {
       });
 
       navigation.navigate('VisitorAdditionalDetails', { 
-        formData,
+        formData: {
+          name: formData.name,
+          address: formData.address,
+          contactNumber: formData.contactNumber,
+          vehicleNumber: formData.vehicleNumber,
+          purposeOfVisit: formData.purposeOfVisit,
+          typeOfVisit: formData.typeOfVisit,
+        },
         visitorId: visitorRef.id 
       });
     } catch (error) {
       console.error('Error saving visitor data:', error);
-      alert('Error saving visitor data. Please try again.');
+      Alert.alert('Error', 'Failed to save visitor data. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -109,13 +126,11 @@ export function VisitorRegistration() {
           <TextInput
             value={formData.name}
             onChangeText={(text) => validateAndUpdateField('name', text)}
-            onBlur={() => validateField('name', formData.name)}
             placeholder="Enter visitor name"
             style={[
               styles.input,
               errors.name ? styles.inputError : null
             ]}
-            accessibilityLabel="Name of Visitor"
           />
           <InputHint hint="Enter full name using only letters and spaces (2-50 characters)" />
           {errors.name && (
@@ -207,10 +222,12 @@ export function VisitorRegistration() {
       </ScrollView>
       
       <TouchableOpacity 
-        style={[styles.nextButton, isSubmitting && styles.nextButtonDisabled]}
+        style={[
+          styles.nextButton, 
+          (!formData.name || !formData.contactNumber || !formData.purposeOfVisit) && styles.disabledButton
+        ]}
         onPress={handleNext}
-        activeOpacity={0.8}
-        disabled={isSubmitting}
+        disabled={!formData.name || !formData.contactNumber || !formData.purposeOfVisit || isSubmitting}
       >
         {isSubmitting ? (
           <ActivityIndicator color="#fff" />
@@ -321,5 +338,8 @@ const styles = StyleSheet.create({
   },
   nextButtonDisabled: {
     opacity: 0.7,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 }); 
