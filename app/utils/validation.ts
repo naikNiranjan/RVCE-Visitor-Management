@@ -70,8 +70,8 @@ const validationRules: ValidationRules = {
 
   purposeOfVisit: (value: string) => {
     if (!value.trim()) return 'Purpose of visit is required';
-    if (value.trim().length < 10) {
-      return 'Purpose should be at least 10 characters';
+    if (value.trim().length < 4) {
+      return 'Purpose should be at least 4 characters';
     }
     return undefined;
   },

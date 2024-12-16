@@ -14,6 +14,7 @@ interface DropdownProps {
   options: DropdownOption[];
   placeholder?: string;
   icon?: keyof typeof MaterialIcons.glyphMap;
+  disabled?: boolean;
 }
 
 export function Dropdown({ 
@@ -21,27 +22,35 @@ export function Dropdown({
   onValueChange, 
   options, 
   placeholder = 'Select an option',
-  icon
+  icon,
+  disabled = false
 }: DropdownProps) {
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      disabled && styles.disabledContainer
+    ]}>
       <View style={styles.labelContainer}>
         {icon && (
           <MaterialIcons 
             name={icon} 
             size={20} 
-            color="#6B46C1" 
+            color={disabled ? '#999' : '#6B46C1'} 
             style={styles.icon} 
           />
         )}
-        <Text style={styles.label}>{placeholder}</Text>
+        <Text style={[
+          styles.label,
+          disabled && styles.disabledText
+        ]}>{placeholder}</Text>
       </View>
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={value}
           onValueChange={onValueChange}
           style={styles.picker}
-          dropdownIconColor="#6B46C1"
+          dropdownIconColor={disabled ? '#999' : '#6B46C1'}
+          enabled={!disabled}
         >
           <Picker.Item 
             label={`Select ${placeholder}`} 
@@ -53,7 +62,10 @@ export function Dropdown({
               key={option.value}
               label={option.label}
               value={option.value}
-              style={styles.item}
+              style={[
+                styles.item,
+                disabled && styles.disabledText
+              ]}
             />
           ))}
         </Picker>
@@ -102,5 +114,11 @@ const styles = StyleSheet.create({
   },
   item: {
     color: '#1a1a1a',
+  },
+  disabledContainer: {
+    opacity: 0.7,
+  },
+  disabledText: {
+    color: '#999',
   },
 }); 

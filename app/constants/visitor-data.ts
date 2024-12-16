@@ -23,7 +23,6 @@ export const documentTypes = [
   { label: 'Company ID', value: 'CID' },
   { label: 'Other', value: 'OTHER' },
 ];
-
 // Staff organized by department
   export const departmentStaff = {
     AE: [

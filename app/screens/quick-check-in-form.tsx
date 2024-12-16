@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import { Header } from '../components/ui/header';
 import { Dropdown } from '../components/ui/dropdown';
 import { Counter } from '../components/ui/counter';
 import { SubmitButton } from '../components/ui/submit-button';
-import { departments, staff } from '../constants/visitor-data';
+import { departments, getStaffByDepartment } from '../constants/visitor-data';
 import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../FirebaseConfig';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -30,6 +30,12 @@ export default function QuickCheckInForm() {
     purposeOfVisit: '',
     visitorCount: 1,
   });
+
+  // Get staff options based on selected department
+  const staffOptions = useMemo(() => {
+    if (!formData.department) return [];
+    return getStaffByDepartment(formData.department);
+  }, [formData.department]);
 
   const createVisitorLog = async (checkInTime: string) => {
     try {
@@ -176,19 +182,26 @@ export default function QuickCheckInForm() {
           <Text style={styles.sectionTitle}>Check-in Details</Text>
           
           <Dropdown
-            value={formData.whomToMeet}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, whomToMeet: value }))}
-            options={staff}
-            placeholder="Whom to Meet *"
-            icon="person-pin"
-          />
-
-          <Dropdown
             value={formData.department}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, department: value }))}
+            onValueChange={(value) => {
+              setFormData(prev => ({ 
+                ...prev, 
+                department: value,
+                whomToMeet: '' // Reset whomToMeet when department changes
+              }));
+            }}
             options={departments}
             placeholder="Department *"
             icon="business"
+          />
+
+          <Dropdown
+            value={formData.whomToMeet}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, whomToMeet: value }))}
+            options={staffOptions}
+            placeholder="Whom to Meet *"
+            icon="person-pin"
+            disabled={!formData.department}
           />
 
           <Dropdown
