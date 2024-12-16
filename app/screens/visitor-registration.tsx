@@ -127,7 +127,7 @@ export function VisitorRegistration() {
         <View style={styles.inputGroup}>
           <View style={styles.labelContainer}>
             <MaterialIcons name="person" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Name of Visitor*</Text>
+            <Text style={styles.label}>Name of Visitor *</Text>
           </View>
           <TextInput
             value={formData.name}
@@ -147,7 +147,7 @@ export function VisitorRegistration() {
         <View style={styles.inputGroup}>
           <View style={styles.labelContainer}>
             <MaterialIcons name="location-on" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Address</Text>
+            <Text style={styles.label}>Address *</Text>
           </View>
           <TextInput
             value={formData.address}
@@ -160,7 +160,7 @@ export function VisitorRegistration() {
         <View style={styles.inputGroup}>
           <View style={styles.labelContainer}>
             <MaterialIcons name="phone" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Contact Number*</Text>
+            <Text style={styles.label}>Contact Number *</Text>
           </View>
           <TextInput
             value={formData.contactNumber}
@@ -186,7 +186,7 @@ export function VisitorRegistration() {
         <View style={styles.inputGroup}>
           <View style={styles.labelContainer}>
             <MaterialIcons name="directions-car" size={20} color="#6B46C1" />
-            <Text style={styles.label}>Vehicle Number (Optional)</Text>
+            <Text style={styles.label}>Vehicle Number </Text>
           </View>
           <TextInput
             value={formData.vehicleNumber}
@@ -203,7 +203,7 @@ export function VisitorRegistration() {
             autoCapitalize="characters"
             maxLength={12}
           />
-          <InputHint hint="Format: KA01AB1234 (State Code)(District)(Letters)(Numbers)" />
+          <InputHint hint="Format: KA01AB1234 " />
           {errors.vehicleNumber && (
             <Text style={styles.errorText}>{errors.vehicleNumber}</Text>
           )}

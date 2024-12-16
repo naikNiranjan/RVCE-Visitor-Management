@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SearchBar } from '../components/ui/SearchBar';
 import { FilterSidebar } from './components/FilterSideBar';
-import { collection, query, getDocs, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../FirebaseConfig';
 import { format } from 'date-fns';
 import { useNavigation } from '@react-navigation/native';
@@ -43,42 +43,71 @@ export const VisitorLog = () => {
   });
 
   useEffect(() => {
-    fetchVisitors();
+    setIsLoading(true);
+    
+    // Set up real-time listener
+    const visitorRef = collection(db, 'visitors');
+    const q = query(
+      visitorRef,
+      orderBy('registrationDate', 'desc') // Order by registration date
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      {
+        next: (querySnapshot) => {
+          const visitorData: VisitorLogData[] = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            visitorData.push({
+              id: doc.id,
+              name: data.name || '',
+              checkInTime: data.checkInTime || '',
+              checkOutTime: data.checkOutTime || null,
+              purpose: data.purposeOfVisit || '',
+              whomToMeet: data.additionalDetails?.whomToMeet || '',
+              department: data.additionalDetails?.department || '',
+              status: data.status || 'pending',
+              contactNumber: data.contactNumber || '',
+              visitorPhotoUrl: data.additionalDetails?.visitorPhotoUrl || '',
+              documentUrl: data.additionalDetails?.documentUrl || '',
+              type: data.type || 'visitor',
+              lastUpdated: data.lastUpdated || data.checkInTime || data.registrationDate || '',
+            });
+          });
+
+          // Sort visitors by status and time
+          const sortedVisitors = visitorData.sort((a, b) => {
+            // Show 'In' status first, then 'pending', then 'Out'
+            const statusOrder = { 'In': 0, 'pending': 1, 'Out': 2 };
+            const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+            
+            if (statusDiff !== 0) return statusDiff;
+            
+            // Then sort by check-in time (most recent first)
+            const timeA = new Date(a.lastUpdated || a.checkInTime || '').getTime();
+            const timeB = new Date(b.lastUpdated || b.checkInTime || '').getTime();
+            return timeB - timeA;
+          });
+
+          setVisitors(sortedVisitors);
+          setIsLoading(false);
+        },
+        error: (error) => {
+          console.error('Error fetching visitors:', error);
+          setIsLoading(false);
+          Alert.alert(
+            'Error',
+            'Failed to fetch visitor data. Please try again later.'
+          );
+        }
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
-
-  const fetchVisitors = async () => {
-    try {
-      const visitorRef = collection(db, 'visitors');
-      const q = query(visitorRef, orderBy('checkInTime', 'desc'));
-      const querySnapshot = await getDocs(q);
-      
-      const visitorData: VisitorLogData[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        visitorData.push({
-          id: doc.id,
-          name: data.name,
-          checkInTime: data.checkInTime,
-          checkOutTime: data.checkOutTime,
-          purpose: data.purposeOfVisit,
-          whomToMeet: data.additionalDetails?.whomToMeet || '',
-          department: data.additionalDetails?.department || '',
-          status: data.status,
-          contactNumber: data.contactNumber,
-          visitorPhotoUrl: data.additionalDetails?.visitorPhotoUrl,
-          documentUrl: data.additionalDetails?.documentUrl,
-          type: data.type || 'visitor',
-          lastUpdated: data.lastUpdated,
-        });
-      });
-
-      setVisitors(visitorData);
-    } catch (error) {
-      console.error('Error fetching visitors:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleVisitorPress = (visitor: VisitorLogData) => {
     navigation.navigate('VisitorDetails', { visitorId: visitor.id });
@@ -95,9 +124,7 @@ export const VisitorLog = () => {
         lastUpdated: checkOutTime,
       });
 
-      // Refresh the visitor list
-      fetchVisitors();
-      
+      // The real-time listener will automatically update the UI
     } catch (error) {
       console.error('Error checking out visitor:', error);
       Alert.alert('Error', 'Failed to check out visitor. Please try again.');

@@ -99,6 +99,8 @@ export default function CabAdditionalDetails() {
       // Update the visitor document with additional details
       const visitorRef = doc(db, 'visitors', visitorId);
       
+      const checkInTime = new Date().toISOString();
+
       await updateDoc(visitorRef, {
         additionalDetails: {
           whomToMeet: formData.whomToMeet,
@@ -110,8 +112,8 @@ export default function CabAdditionalDetails() {
           documentUrl,
         },
         status: 'In',
-        lastUpdated: new Date().toISOString(),
-        checkInTime: new Date().toISOString(),
+        checkInTime,
+        lastUpdated: checkInTime,
       });
 
       // Navigate to success screen with complete data

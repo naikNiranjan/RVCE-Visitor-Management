@@ -51,7 +51,10 @@ export default function CabSuccess({ route }: Props) {
   }, [visitorId]);
 
   const handleGoHome = () => {
-    navigation.navigate('Home');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' }],
+    });
   };
 
   return (

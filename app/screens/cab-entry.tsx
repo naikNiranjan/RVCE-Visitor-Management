@@ -255,7 +255,7 @@ export default function CabEntry() {
         )}
 
         <View style={styles.sectionDivider}>
-          <Text style={styles.sectionTitle}>Driver Details (Optional)</Text>
+          <Text style={styles.sectionTitle}>Driver Details</Text>
           <Text style={styles.sectionSubtitle}>Fill if driver details are available</Text>
         </View>
 
