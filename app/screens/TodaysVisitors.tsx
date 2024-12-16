@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '../../FirebaseConfig';
 import { SearchBar } from './components/SearchBar';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,20 +15,27 @@ interface Visitor {
   whomToMeet: string;
   department: string;
   purposeOfVisit: string;
-  checkInTime: string;
-  checkOutTime: string | null;
+  checkInTime: any;
+  checkOutTime: any | null;
   status: 'In' | 'Out';
   visitorPhotoUrl?: string;
   type: string;
 }
 
-function formatTime(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  });
+function formatTime(time: any): string {
+  if (!time) return 'N/A';
+  
+  try {
+    const date = new Date(time);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return 'Invalid Time';
+  }
 }
 
 export default function TodaysVisitors() {
@@ -37,39 +44,85 @@ export default function TodaysVisitors() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchTodaysVisitors();
+    const fetchVisitors = async () => {
+      try {
+        // Get today's start timestamp
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Get tomorrow's start timestamp
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        console.log('Fetching visitors between:', today.toISOString(), 'and', tomorrow.toISOString());
+
+        // Reference to visitors collection
+        const visitorsRef = collection(db, 'visitorLogs');
+        
+        // Create query for today's visitors
+        const q = query(
+          visitorsRef,
+          where('checkInTime', '>=', today.toISOString()),
+          where('checkInTime', '<', tomorrow.toISOString())
+        );
+
+        // Set up real-time listener
+        const unsubscribe = onSnapshot(q, 
+          (snapshot) => {
+            const visitorData: Visitor[] = [];
+            const seenIds = new Set(); // To prevent duplicates
+
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              
+              // Skip if we've already seen this ID
+              if (seenIds.has(doc.id)) return;
+              seenIds.add(doc.id);
+
+              // Only add if it's a valid visitor entry
+              if (data.name && data.checkInTime) {
+                visitorData.push({
+                  id: doc.id,
+                  name: data.name,
+                  contactNumber: data.contactNumber || '',
+                  whomToMeet: data.whomToMeet || '',
+                  department: data.department || '',
+                  purposeOfVisit: data.purposeOfVisit || '',
+                  checkInTime: data.checkInTime,
+                  checkOutTime: data.checkOutTime || null,
+                  status: data.status || 'In',
+                  visitorPhotoUrl: data.visitorPhotoUrl || '',
+                  type: data.type || 'visitor'
+                });
+              }
+            });
+            
+            // Sort by check-in time in descending order
+            visitorData.sort((a, b) => {
+              const timeA = new Date(a.checkInTime).getTime();
+              const timeB = new Date(b.checkInTime).getTime();
+              return timeB - timeA;
+            });
+
+            console.log('Fetched unique visitors:', visitorData.length);
+            setVisitors(visitorData);
+            setIsLoading(false);
+          },
+          (error) => {
+            console.error('Error fetching visitors:', error);
+            setIsLoading(false);
+          }
+        );
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Error in fetchVisitors:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchVisitors();
   }, []);
-
-  const fetchTodaysVisitors = async () => {
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const visitorLogsRef = collection(db, 'visitorLogs');
-      const q = query(
-        visitorLogsRef,
-        where('checkInTime', '>=', today.toISOString()),
-        where('checkInTime', '<', tomorrow.toISOString()),
-        orderBy('checkInTime', 'desc')
-      );
-
-      const querySnapshot = await getDocs(q);
-      const visitorData: Visitor[] = [];
-      
-      querySnapshot.forEach((doc) => {
-        visitorData.push({ id: doc.id, ...doc.data() } as Visitor);
-      });
-
-      setVisitors(visitorData);
-    } catch (error) {
-      console.error('Error fetching today\'s visitors:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const filteredVisitors = visitors.filter(visitor => 
     visitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -101,7 +154,12 @@ export default function TodaysVisitors() {
           styles.statusBadge,
           visitor.status === 'In' ? styles.statusIn : styles.statusOut
         ]}>
-          <Text style={styles.statusText}>{visitor.status}</Text>
+          <Text style={[
+            styles.statusText,
+            { color: visitor.status === 'In' ? '#15803D' : '#B91C1C' }
+          ]}>
+            {visitor.status}
+          </Text>
         </View>
       </View>
 
@@ -152,7 +210,7 @@ export default function TodaysVisitors() {
 function DetailRow({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <View style={styles.detailRow}>
-      <Ionicons name={icon} size={16} color="#6B46C1" style={styles.detailIcon} />
+      <Ionicons name={icon as any} size={16} color="#6B46C1" style={styles.detailIcon} />
       <Text style={styles.detailLabel}>{label}:</Text>
       <Text style={styles.detailValue}>{value}</Text>
     </View>
@@ -186,6 +244,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -234,7 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#DEF7EC',
   },
   statusOut: {
-    backgroundColor: '#FDE8E8',
+    backgroundColor: '#FEE2E2',
   },
   statusText: {
     fontSize: 14,

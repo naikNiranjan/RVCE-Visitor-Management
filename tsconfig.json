@@ -6,7 +6,9 @@
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "types": ["node"],
+    "typeRoots": ["./app/types"]
   },
   "include": [
     "**/*.ts",
