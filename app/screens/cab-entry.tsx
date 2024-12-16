@@ -60,9 +60,9 @@ export default function CabEntry() {
   };
 
   const handleNext = async () => {
-    // Validate all required fields
+    // Validate required fields
     const formErrors: FormErrors = {};
-    const requiredFields = ['name', 'contactNumber', 'purposeOfVisit', 'cabProvider'];
+    const requiredFields = ['name', 'contactNumber', 'cabProvider'];
     
     requiredFields.forEach((field) => {
       const error = validateField(field as keyof FormErrors, formData[field as keyof typeof formData]);
@@ -237,7 +237,7 @@ export default function CabEntry() {
             textAlignVertical="top"
           />
           <InputHint hint="Minimum 10 characters describing the purpose of visit" />
-        </View>
+        </View>x
 
         <Dropdown
           value={formData.cabProvider}

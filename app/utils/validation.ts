@@ -68,13 +68,7 @@ const validationRules: ValidationRules = {
     return undefined;
   },
 
-  purposeOfVisit: (value: string) => {
-    if (!value.trim()) return 'Purpose of visit is required';
-    if (value.trim().length < 4) {
-      return 'Purpose should be at least 4 characters';
-    }
-    return undefined;
-  },
+
 
   typeOfVisit: (value: string) => {
     const validTypes = ['Personal', 'Business', 'Official', 'Other'];
@@ -174,9 +168,7 @@ export function validateForm(formData: CabFormData) {
   if (!formData.contactNumber) {
     errors.contactNumber = 'Contact number is required';
   }
-  if (!formData.purposeOfVisit) {
-    errors.purposeOfVisit = 'Purpose of visit is required';
-  }
+  
   if (!formData.cabProvider) {
     errors.cabProvider = 'Cab provider is required';
   }

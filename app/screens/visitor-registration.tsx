@@ -53,16 +53,22 @@ export function VisitorRegistration() {
   };
 
   const handleNext = async () => {
-    // Validate all fields
+    // Validate only required fields
     const formErrors: FormErrors = {};
+    const requiredFields = ['name', 'contactNumber']; // Removed purposeOfVisit
     
-    Object.keys(formData).forEach((key) => {
-      const field = key as keyof FormErrors;
-      const error = validateField(field, formData[field]);
+    requiredFields.forEach((field) => {
+      const error = validateField(field as keyof FormErrors, formData[field as keyof typeof formData]);
       if (error) {
-        formErrors[field] = error;
+        formErrors[field as keyof FormErrors] = error;
       }
     });
+
+    // Validate optional fields if they have values
+    if (formData.vehicleNumber) {
+      const error = validateField('vehicleNumber', formData.vehicleNumber);
+      if (error) formErrors.vehicleNumber = error;
+    }
 
     setErrors(formErrors);
 
@@ -217,17 +223,17 @@ export function VisitorRegistration() {
             numberOfLines={3}
             textAlignVertical="top"
           />
-          <InputHint hint="Minimum 10 characters describing the purpose of visit" />
+          
         </View>
       </ScrollView>
       
       <TouchableOpacity 
         style={[
           styles.nextButton, 
-          (!formData.name || !formData.contactNumber || !formData.purposeOfVisit) && styles.disabledButton
+          (!formData.name || !formData.contactNumber) && styles.disabledButton
         ]}
         onPress={handleNext}
-        disabled={!formData.name || !formData.contactNumber || !formData.purposeOfVisit || isSubmitting}
+        disabled={!formData.name || !formData.contactNumber || isSubmitting}
       >
         {isSubmitting ? (
           <ActivityIndicator color="#fff" />
