@@ -29,6 +29,4 @@ npm run reset-project
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
 
-=======
-# RV-Visitor-Management
->>>>>>> be3d5954d10c820d228fa221454547f77d522146
+
