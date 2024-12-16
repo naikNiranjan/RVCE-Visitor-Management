@@ -230,11 +230,57 @@ export const VisitorLog = () => {
     </TouchableOpacity>
   );
 
-  const filteredVisitors = visitors.filter(visitor => 
-    visitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    visitor.contactNumber.includes(searchQuery) ||
-    visitor.purpose.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const applyFilters = (data: VisitorLogData[]) => {
+    let filteredData = [...data];
+
+    // Apply status filters
+    if (selectedFilters.status.length > 0) {
+      filteredData = filteredData.filter(visitor => 
+        selectedFilters.status.includes(visitor.status)
+      );
+    }
+
+    // Apply department filters
+    if (selectedFilters.department.length > 0) {
+      filteredData = filteredData.filter(visitor => 
+        selectedFilters.department.includes(visitor.department)
+      );
+    }
+
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filteredData = filteredData.filter(visitor => 
+        visitor.name.toLowerCase().includes(query) ||
+        visitor.contactNumber.includes(query) ||
+        visitor.purpose.toLowerCase().includes(query) ||
+        visitor.department.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    if (selectedFilters.sortBy) {
+      filteredData.sort((a, b) => {
+        switch (selectedFilters.sortBy) {
+          case 'name':
+            return a.name.localeCompare(b.name);
+          case 'checkInTime':
+            return new Date(b.checkInTime || 0).getTime() - new Date(a.checkInTime || 0).getTime();
+          case 'status':
+            return a.status.localeCompare(b.status);
+          case 'department':
+            return a.department.localeCompare(b.department);
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return filteredData;
+  };
+
+  // Update the FlatList data to use filtered visitors
+  const filteredVisitors = applyFilters(visitors);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -251,6 +297,11 @@ export const VisitorLog = () => {
             style={styles.filterButton}
           >
             <Ionicons name="filter" size={24} color="#374151" />
+            {(selectedFilters.status.length > 0 || 
+              selectedFilters.department.length > 0 || 
+              selectedFilters.sortBy) && (
+              <View style={styles.filterBadge} />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -416,6 +467,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '500',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#6B46C1',
   },
 });
 

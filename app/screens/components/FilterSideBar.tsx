@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Checkbox } from 'react-native-paper';
-import { DateRangePicker } from '../../components/ui/date-range-picker'
+import { departments } from '../../constants/visitor-data';
 
 interface FilterSidebarProps {
   visible: boolean;
@@ -11,87 +10,70 @@ interface FilterSidebarProps {
     status: string[];
     department: string[];
     sortBy: string | null;
-    sortOrder: 'asc' | 'desc';
   };
   onFilterChange: (filters: any) => void;
 }
 
-const statusOptions = [
-  { label: 'Checked In', value: 'checked_in' },
-  { label: 'Checked Out', value: 'checked_out' },
+const STATUS_OPTIONS = [
+  { label: 'Checked In', value: 'In' },
+  { label: 'Checked Out', value: 'Out' },
   { label: 'Pending', value: 'pending' },
 ];
 
-const departmentOptions = [
-  { label: 'FIN', value: 'FIN' },
-  { label: 'HR', value: 'HR' },
-  { label: 'IT', value: 'IT' },
-  { label: 'Admin', value: 'ADMIN' },
-];
-
-const purposeOptions = [
-  { label: 'Meeting', value: 'meeting' },
-  { label: 'Interview', value: 'interview' },
-  { label: 'Delivery', value: 'delivery' },
-  { label: 'Personal', value: 'personal' },
-];
-
-const sortOptions = [
+const SORT_OPTIONS = [
   { label: 'Check-in Time', value: 'checkInTime' },
   { label: 'Visitor Name', value: 'name' },
   { label: 'Status', value: 'status' },
-  { label: 'Department', value: 'additionalDetails.department' },
+  { label: 'Department', value: 'department' },
 ];
 
 export function FilterSidebar({ visible, onClose, filters, onFilterChange }: FilterSidebarProps) {
   if (!visible) return null;
 
-  const handleCheckboxChange = (type: string, value: string) => {
-    const currentValues = filters[type] || [];
-    const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value];
-
+  const toggleStatus = (status: string) => {
+    const newStatuses = filters.status.includes(status)
+      ? filters.status.filter(s => s !== status)
+      : [...filters.status, status];
+    
     onFilterChange({
       ...filters,
-      [type]: newValues
+      status: newStatuses,
     });
   };
 
-  const handleSortChange = (value: string) => {
+  const toggleDepartment = (dept: string) => {
+    const newDepartments = filters.department.includes(dept)
+      ? filters.department.filter(d => d !== dept)
+      : [...filters.department, dept];
+    
     onFilterChange({
       ...filters,
-      sortBy: value,
-      sortOrder: filters.sortBy === value && filters.sortOrder === 'asc' ? 'desc' : 'asc'
+      department: newDepartments,
     });
   };
 
-  const handleDateRangeChange = (startDate: string | null, endDate: string | null) => {
+  const setSortBy = (sortBy: string) => {
     onFilterChange({
       ...filters,
-      dateRange: { startDate, endDate }
+      sortBy: filters.sortBy === sortBy ? null : sortBy,
     });
   };
 
-  const isSelected = (type: string, value: string) => {
-    return filters[type]?.includes(value);
+  const clearAllFilters = () => {
+    onFilterChange({
+      status: [],
+      department: [],
+      sortBy: null,
+    });
   };
 
   return (
-    <View style={[styles.container, styles.sidebar]}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Filters</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            style={styles.clearButton} 
-            onPress={() => onFilterChange({
-              status: [],
-              department: [],
-              sortBy: null,
-              sortOrder: 'asc'
-            })}
-          >
-            <Text style={styles.clearButtonText}>Clear All</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={clearAllFilters}>
+            <Text style={styles.clearText}>Clear All</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color="#374151" />
@@ -99,64 +81,66 @@ export function FilterSidebar({ visible, onClose, filters, onFilterChange }: Fil
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.content}
-        showsVerticalScrollIndicator={true}
-      >
-        {/* Status Section */}
-        <View style={styles.filterSection}>
+      <ScrollView style={styles.content}>
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Status</Text>
-          {statusOptions.map((option) => (
-            <View key={option.value} style={styles.checkboxRow}>
-              <Checkbox.Android
-                status={isSelected('status', option.value) ? 'checked' : 'unchecked'}
-                onPress={() => handleCheckboxChange('status', option.value)}
-                color="#6B46C1"
-              />
-              <Text style={styles.checkboxLabel}>{option.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Department Section */}
-        <View style={styles.filterSection}>
-          <Text style={styles.sectionTitle}>Department</Text>
-          {departmentOptions.map((option) => (
-            <View key={option.value} style={styles.checkboxRow}>
-              <Checkbox.Android
-                status={isSelected('department', option.value) ? 'checked' : 'unchecked'}
-                onPress={() => handleCheckboxChange('department', option.value)}
-                color="#6B46C1"
-              />
-              <Text style={styles.checkboxLabel}>{option.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.filterSection}>
-          <Text style={styles.sectionTitle}>Sort By</Text>
-          {sortOptions.map((option) => (
+          {STATUS_OPTIONS.map((option) => (
             <TouchableOpacity
               key={option.value}
-              style={[
-                styles.sortOption,
-                filters.sortBy === option.value && styles.selectedOption,
-              ]}
-              onPress={() => handleSortChange(option.value)}
+              style={styles.checkboxRow}
+              onPress={() => toggleStatus(option.value)}
             >
-              <Text style={[
-                styles.sortOptionText,
-                filters.sortBy === option.value && styles.selectedOptionText,
+              <View style={[
+                styles.checkbox,
+                filters.status.includes(option.value) && styles.checkboxChecked
               ]}>
-                {option.label}
-                {filters.sortBy === option.value && (
-                  <Ionicons 
-                    name={filters.sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'} 
-                    size={16} 
-                    color="#6B46C1" 
-                  />
+                {filters.status.includes(option.value) && (
+                  <Ionicons name="checkmark" size={16} color="#fff" />
                 )}
-              </Text>
+              </View>
+              <Text style={styles.checkboxLabel}>{option.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Department</Text>
+          {departments.map((dept) => (
+            <TouchableOpacity
+              key={dept.value}
+              style={styles.checkboxRow}
+              onPress={() => toggleDepartment(dept.value)}
+            >
+              <View style={[
+                styles.checkbox,
+                filters.department.includes(dept.value) && styles.checkboxChecked
+              ]}>
+                {filters.department.includes(dept.value) && (
+                  <Ionicons name="checkmark" size={16} color="#fff" />
+                )}
+              </View>
+              <Text style={styles.checkboxLabel}>{dept.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sort By</Text>
+          {SORT_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={styles.radioRow}
+              onPress={() => setSortBy(option.value)}
+            >
+              <View style={[
+                styles.radio,
+                filters.sortBy === option.value && styles.radioSelected
+              ]}>
+                {filters.sortBy === option.value && (
+                  <View style={styles.radioInner} />
+                )}
+              </View>
+              <Text style={styles.radioLabel}>{option.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -167,21 +151,16 @@ export function FilterSidebar({ visible, onClose, filters, onFilterChange }: Fil
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    zIndex: 1000,
-  },
-  sidebar: {
     position: 'absolute',
-    left: 0,
+    right: 0,
     top: 0,
-    height: '100%',
+    bottom: 0,
     width: '80%',
-    maxWidth: 320,
+    backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
+    shadowOffset: { width: -2, height: 0 },
     shadowOpacity: 0.25,
-    shadowRadius: 5,
+    shadowRadius: 3.84,
     elevation: 5,
   },
   header: {
@@ -190,30 +169,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#fff',
-    zIndex: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  headerButtons: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  clearText: {
+    color: '#6B46C1',
+    fontSize: 14,
+    fontWeight: '500',
   },
   content: {
     flex: 1,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  filterSection: {
+  section: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#e5e7eb',
   },
-  filterLabel: {
-    fontSize: 14,
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#374151',
     marginBottom: 12,
@@ -223,41 +205,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#6B46C1',
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#6B46C1',
+  },
   checkboxLabel: {
-    marginLeft: 8,
     fontSize: 14,
     color: '#374151',
   },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  clearButton: {
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 8,
+  },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#6B46C1',
+    marginRight: 12,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  clearButtonText: {
-    color: '#DC2626',
-    fontSize: 14,
-    fontWeight: '500',
+  radioSelected: {
+    borderColor: '#6B46C1',
   },
-  dateRangeContainer: {
-    marginTop: 8,
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#6B46C1',
   },
-  selectedOption: {
-    backgroundColor: '#F3F0FF',
-  },
-  selectedOptionText: {
-    color: '#6B46C1',
-    fontWeight: '600',
-  },
-  sortOption: {
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 4,
-  },
-  sortOptionText: {
+  radioLabel: {
     fontSize: 14,
     color: '#374151',
   },
