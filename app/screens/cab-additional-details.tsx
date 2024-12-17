@@ -107,7 +107,6 @@ export default function CabAdditionalDetails() {
           department: formData.department,
           documentType: formData.documentType,
           visitorCount: formData.visitorCount,
-          sendNotification: formData.sendNotification,
           visitorPhotoUrl,
           documentUrl,
         },

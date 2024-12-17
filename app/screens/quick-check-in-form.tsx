@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,7 +11,7 @@ import { SubmitButton } from '../components/ui/submit-button';
 import { departments, getStaffByDepartment } from '../constants/visitor-data';
 import { doc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../FirebaseConfig';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 type QuickCheckInFormRouteProp = RouteProp<RootStackParamList, 'QuickCheckInForm'>;
 type QuickCheckInFormNavigationProp = StackNavigationProp<
@@ -204,18 +204,18 @@ export default function QuickCheckInForm() {
             disabled={!formData.department}
           />
 
-          <Dropdown
-            value={formData.purposeOfVisit}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, purposeOfVisit: value }))}
-            options={[
-              { label: 'Meeting', value: 'Meeting' },
-              { label: 'Interview', value: 'Interview' },
-              { label: 'Delivery', value: 'Delivery' },
-              { label: 'Personal', value: 'Personal' },
-            ]}
-            placeholder="Purpose of Visit *"
-            icon="assignment"
-          />
+          <View style={styles.inputContainer}>
+            <View style={styles.inputRow}>
+              <Ionicons name="document-text" size={20} color="#6B46C1" />
+              <TextInput
+                style={styles.input}
+                value={formData.purposeOfVisit}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, purposeOfVisit: text }))}
+                placeholder="Purpose of Visit *"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+          </View>
 
           <Counter
             label="Number of Visitors"
@@ -300,5 +300,24 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     backgroundColor: '#fff',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1F2937',
+    paddingVertical: 8,
   },
 }); 

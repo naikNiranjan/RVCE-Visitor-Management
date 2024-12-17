@@ -1,29 +1,34 @@
 import { RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
+// Root Stack Types
 export type RootStackParamList = {
-  Home: undefined;
-  VisitorLog: undefined;
-  VisitorDetails: {
-    visitorId: string;
-  };
-  VisitorRegistration: undefined;
-  VisitorAdditionalDetails: {
-    formData: any;
-    visitorId: string;
+  VisitorLogStack: undefined;
+  VisitorEntry: undefined;
+  QuickCheckIn: undefined;
+  QuickCheckInForm: {
+    existingVisitor: any;
   };
   VisitorSuccess: {
     formData: any;
     visitorId: string;
   };
-  EditProfile: undefined;
-  NotificationSettings: undefined;
-  PrivacySettings: undefined;
-  Support: undefined;
-  Profile: undefined;
-  SignOut: undefined;
+  CabSuccess: {
+    formData: any;
+  };
+  // ... other screens
 };
 
-export type VisitorDetailsRouteProp = RouteProp<RootStackParamList, 'VisitorDetails'>;
+// Visitor Log Stack Types
+export type VisitorLogStackParamList = {
+  VisitorLog: undefined;
+  VisitorDetails: {
+    visitorId: string;
+  };
+};
+
+export type VisitorLogRouteProp = RouteProp<VisitorLogStackParamList, 'VisitorLog'>;
+export type VisitorDetailsRouteProp = RouteProp<VisitorLogStackParamList, 'VisitorDetails'>;
 
 declare global {
   namespace ReactNavigation {

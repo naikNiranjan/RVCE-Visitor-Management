@@ -151,12 +151,17 @@ const AppNavigator = () => {
         component={PrivacySettings}
         options={{ headerShown: false }}
       />
+      
       <Stack.Screen 
         name="Support" 
         component={Support}
         options={{ headerShown: false }}
       />
+        
     </Stack.Navigator>
+    
+
+    
   );
 };
 

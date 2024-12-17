@@ -84,13 +84,17 @@ export function VisitorRegistration() {
     setIsSubmitting(true);
 
     try {
+      const registrationTime = new Date().toISOString();
+
       const visitorRef = await addDoc(collection(db, 'visitors'), {
         ...formData,
         status: 'pending',
-        registrationDate: new Date().toISOString(),
+        registrationDate: registrationTime,
         checkInTime: null,
         checkOutTime: null,
-        additionalDetails: null,
+        additionalDetails: {},
+        lastUpdated: registrationTime,
+        type: 'visitor'
       });
 
       navigation.navigate('VisitorAdditionalDetails', { 

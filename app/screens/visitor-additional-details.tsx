@@ -125,10 +125,12 @@ export function VisitorAdditionalDetails() {
           visitorCount: formData.visitorCount,
           visitorPhotoUrl,
           documentUrl,
+          checkInTime,
         },
         status: 'In',
         checkInTime,
         lastUpdated: checkInTime,
+        type: 'visitor',
       };
 
       await updateDoc(visitorRef, updateData);

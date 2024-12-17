@@ -1,51 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types/visitor';
+import { VisitorLogStackParamList, VisitorDetailsRouteProp } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../FirebaseConfig';
 import { format } from 'date-fns';
 import { Header } from '../components/ui/header';
 
-type VisitorDetailsRouteProp = RouteProp<RootStackParamList, 'VisitorDetails'>;
-type VisitorDetailsNavigationProp = StackNavigationProp<RootStackParamList>;
+type VisitorDetailsScreenNavigationProp = StackNavigationProp<VisitorLogStackParamList, 'VisitorDetails'>;
 
 export function VisitorDetails() {
+  const navigation = useNavigation<VisitorDetailsScreenNavigationProp>();
   const route = useRoute<VisitorDetailsRouteProp>();
-  const navigation = useNavigation<VisitorDetailsNavigationProp>();
   const { visitorId } = route.params;
   const [visitor, setVisitor] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchVisitorDetails();
-  }, [visitorId]);
-
   const fetchVisitorDetails = async () => {
     try {
+      if (!visitorId) {
+        throw new Error('No visitor ID provided');
+      }
+
       const visitorRef = doc(db, 'visitors', visitorId);
       const visitorDoc = await getDoc(visitorRef);
       
-      if (visitorDoc.exists()) {
-        setVisitor({ id: visitorDoc.id, ...visitorDoc.data() });
+      if (!visitorDoc.exists()) {
+        throw new Error('Visitor not found');
       }
+
+      setVisitor({ id: visitorDoc.id, ...visitorDoc.data() });
     } catch (error) {
       console.error('Error fetching visitor details:', error);
+      Alert.alert('Error', 'Failed to load visitor details');
+      navigation.goBack();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleViewDocument = async (url: string) => {
-    try {
-      await Linking.openURL(url);
-    } catch (error) {
-      console.error('Error opening document:', error);
-    }
-  };
+  useEffect(() => {
+    fetchVisitorDetails();
+  }, [visitorId]);
 
   const handleCheckOut = async () => {
     try {
@@ -58,101 +57,100 @@ export function VisitorDetails() {
         lastUpdated: checkOutTime,
       });
 
-      // Refresh visitor details
-      fetchVisitorDetails();
+      Alert.alert('Success', 'Visitor checked out successfully', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
       
     } catch (error) {
       console.error('Error checking out visitor:', error);
-      Alert.alert('Error', 'Failed to check out visitor. Please try again.');
+      Alert.alert('Error', 'Failed to check out visitor');
     }
   };
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6B46C1" />
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Header title="Visitor Details" onBack={() => navigation.goBack()} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6B46C1" />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!visitor) {
     return (
-      <View style={styles.centerContent}>
-        <Text>Visitor not found</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <Header title="Visitor Details" onBack={() => navigation.goBack()} />
+        <View style={styles.centerContent}>
+          <Text>Visitor not found</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Visitor Details" onBack={() => navigation.goBack()} />
-
+      
       <ScrollView style={styles.content}>
-        <View style={styles.profileSection}>
-          {visitor.additionalDetails?.visitorPhotoUrl ? (
-            <Image 
-              source={{ uri: visitor.additionalDetails.visitorPhotoUrl }}
-              style={styles.profileImage}
-            />
-          ) : (
-            <View style={styles.profileImagePlaceholder}>
-              <Ionicons name="person" size={40} color="#6B46C1" />
+        <View style={styles.detailsCard}>
+          <View style={styles.detailRow}>
+            <Ionicons name="person" size={20} color="#6B46C1" />
+            <Text style={styles.detailLabel}>Name:</Text>
+            <Text style={styles.detailValue}>{visitor.name}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Ionicons name="call" size={20} color="#6B46C1" />
+            <Text style={styles.detailLabel}>Contact:</Text>
+            <Text style={styles.detailValue}>{visitor.contactNumber}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Ionicons name="time" size={20} color="#6B46C1" />
+            <Text style={styles.detailLabel}>Check In:</Text>
+            <Text style={styles.detailValue}>
+              {visitor.checkInTime ? format(new Date(visitor.checkInTime), 'dd/MM/yyyy hh:mm a') : 'Not checked in'}
+            </Text>
+          </View>
+
+          {visitor.checkOutTime && (
+            <View style={styles.detailRow}>
+              <Ionicons name="time-outline" size={20} color="#6B46C1" />
+              <Text style={styles.detailLabel}>Check Out:</Text>
+              <Text style={styles.detailValue}>
+                {format(new Date(visitor.checkOutTime), 'dd/MM/yyyy hh:mm a')}
+              </Text>
             </View>
           )}
-          <Text style={styles.visitorName}>{visitor.name}</Text>
-          <View style={[
-            styles.statusBadge,
-            visitor.status === 'In' ? styles.statusIn : 
-            visitor.status === 'Out' ? styles.statusOut :
-            styles.statusPending
-          ]}>
-            <Text style={styles.statusText}>{visitor.status}</Text>
+
+          <View style={styles.detailRow}>
+            <Ionicons name="document-text" size={20} color="#6B46C1" />
+            <Text style={styles.detailLabel}>Purpose:</Text>
+            <Text style={styles.detailValue}>{visitor.purposeOfVisit}</Text>
           </View>
-        </View>
 
-        <View style={styles.detailsCard}>
-          <DetailRow icon="call" label="Contact" value={visitor.contactNumber} />
-          <DetailRow icon="location" label="Address" value={visitor.address} />
-          <DetailRow icon="time" label="Check In" 
-            value={visitor.checkInTime ? 
-              format(new Date(visitor.checkInTime), 'dd/MM/yyyy hh:mm a') : 
-              'Not checked in'
-            } 
-          />
-          {visitor.checkOutTime && (
-            <DetailRow icon="time" label="Check Out" 
-              value={format(new Date(visitor.checkOutTime), 'dd/MM/yyyy hh:mm a')} 
-            />
+          {visitor.additionalDetails?.whomToMeet && (
+            <View style={styles.detailRow}>
+              <Ionicons name="person" size={20} color="#6B46C1" />
+              <Text style={styles.detailLabel}>Meeting:</Text>
+              <Text style={styles.detailValue}>{visitor.additionalDetails.whomToMeet}</Text>
+            </View>
           )}
-          <DetailRow icon="document-text" label="Purpose" value={visitor.purposeOfVisit} />
-          
-          {visitor.additionalDetails && (
-            <>
-              <DetailRow 
-                icon="person" 
-                label="Meeting" 
-                value={visitor.additionalDetails.whomToMeet} 
-              />
-              <DetailRow 
-                icon="business" 
-                label="Department" 
-                value={visitor.additionalDetails.department} 
-              />
-            </>
+
+          {visitor.additionalDetails?.department && (
+            <View style={styles.detailRow}>
+              <Ionicons name="business" size={20} color="#6B46C1" />
+              <Text style={styles.detailLabel}>Department:</Text>
+              <Text style={styles.detailValue}>{visitor.additionalDetails.department}</Text>
+            </View>
           )}
         </View>
+      </ScrollView>
 
-        {visitor.additionalDetails?.documentUrl && (
-          <TouchableOpacity 
-            style={styles.documentButton}
-            onPress={() => handleViewDocument(visitor.additionalDetails.documentUrl)}
-          >
-            <Ionicons name="document-text" size={24} color="#fff" />
-            <Text style={styles.documentButtonText}>View ID Document</Text>
-          </TouchableOpacity>
-        )}
-
-        {visitor.status === 'In' && (
+      {visitor.status === 'In' && (
+        <View style={styles.footer}>
           <TouchableOpacity 
             style={styles.checkOutButton}
             onPress={() => {
@@ -160,14 +158,8 @@ export function VisitorDetails() {
                 'Confirm Check Out',
                 'Are you sure you want to check out this visitor?',
                 [
-                  {
-                    text: 'Cancel',
-                    style: 'cancel'
-                  },
-                  {
-                    text: 'Check Out',
-                    onPress: handleCheckOut
-                  }
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Check Out', onPress: handleCheckOut }
                 ]
               );
             }}
@@ -175,19 +167,9 @@ export function VisitorDetails() {
             <Ionicons name="exit-outline" size={24} color="#fff" />
             <Text style={styles.checkOutButtonText}>Check Out Visitor</Text>
           </TouchableOpacity>
-        )}
-      </ScrollView>
+        </View>
+      )}
     </SafeAreaView>
-  );
-}
-
-function DetailRow({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <View style={styles.detailRow}>
-      <Ionicons name={icon} size={20} color="#6B46C1" style={styles.detailIcon} />
-      <Text style={styles.detailLabel}>{label}:</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
   );
 }
 
@@ -210,49 +192,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  profileSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 16,
-  },
-  profileImagePlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#F3F0FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  visitorName: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusIn: {
-    backgroundColor: '#DEF7EC',
-  },
-  statusOut: {
-    backgroundColor: '#FEE2E2',
-  },
-  statusPending: {
-    backgroundColor: '#FEF3C7',
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
   detailsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -263,40 +202,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    gap: 16,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  detailIcon: {
-    marginRight: 12,
+    gap: 12,
   },
   detailLabel: {
-    width: 100,
     fontSize: 14,
     color: '#6B7280',
+    width: 80,
   },
   detailValue: {
     flex: 1,
     fontSize: 14,
     color: '#1F2937',
-  },
-  documentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#6B46C1',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  documentButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: '500',
+  },
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   checkOutButton: {
     flexDirection: 'row',
@@ -305,7 +232,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#DC2626',
     padding: 16,
     borderRadius: 12,
-    marginTop: 16,
     gap: 8,
   },
   checkOutButtonText: {
